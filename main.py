@@ -37,6 +37,11 @@ def check_for_updates():
     if latest_version and local_version != latest_version:
         print(f"New version available: {latest_version}, updating...")
         download_new_version(download_url)
+
+        # Update the version.txt file with the latest version
+        with open('version.txt', 'w') as version_file:
+            version_file.write(latest_version)
+
         return True
     else:
         return False
