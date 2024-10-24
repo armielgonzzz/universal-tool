@@ -123,14 +123,14 @@ class App(ctk.CTk):
                                            command=lambda: self.open_select_file(phone_clean_frame),
                                            fg_color='#5b5c5c',
                                            hover_color='#424343')
-        select_file_button.grid(row=1, column=0, padx=10, pady=20)
+        select_file_button.grid(row=1, column=0, padx=10, pady=5)
 
         define_save_path_button = ctk.CTkButton(phone_clean_frame,
                                                 text='Save output files to',
                                                 command=lambda: self.select_save_directory(phone_clean_frame),
                                                 fg_color='#5b5c5c',
                                                 hover_color='#424343')
-        define_save_path_button.grid(row=4, column=0, padx=10, pady=20)
+        define_save_path_button.grid(row=4, column=0, padx=10, pady=5)
 
 
     def open_select_file(self, frame: ctk.CTkFrame):
@@ -147,18 +147,19 @@ class App(ctk.CTk):
                                                       size=18,
                                                       weight='bold'
                                                   ))
-            files_to_process_label.grid(row=2, column=0, padx=10, pady=10)
+            files_to_process_label.grid(row=2, column=0, padx=10, pady=5)
 
-            selected_files_label = ctk.CTkLabel(frame,
-                                                text=None,
-                                                fg_color='#292929',
-                                                corner_radius=10)
-            selected_files_label.grid(row=3, column=0, padx=30, pady=10, sticky='nsew', ipadx=20, ipady=20)
+            select_files_frame = ctk.CTkScrollableFrame(frame,height=100)
+            select_files_frame.grid_columnconfigure(0, weight=1)
+            select_files_frame.grid(row=3, column=0, padx=30, pady=5, sticky='nsew')
 
+            for index, file in enumerate(self.file_paths):
+                file_name = os.path.basename(file)
+                selected_files_label = ctk.CTkLabel(select_files_frame,
+                                                text=file_name,
+                                                wraplength=400)
+                selected_files_label.grid(row=index, column=0, padx=10, pady=3, sticky='nsew')
 
-
-            file_names = [os.path.basename(file) for file in self.file_paths]
-            selected_files_label.configure(text="\n".join(file_names))
             print(f"Files selected: {self.file_paths}")
             self.input_file_check = True
 
@@ -176,7 +177,7 @@ class App(ctk.CTk):
                                                     size=18,
                                                     weight='bold'
                                                 ))
-                run_tool_button.grid(row=7, column=0, padx=10, pady=10)
+                run_tool_button.grid(row=7, column=0, padx=10, pady=5)
     
     def select_save_directory(self, frame: ctk.CTkFrame):
 
@@ -185,8 +186,9 @@ class App(ctk.CTk):
             save_path_label = ctk.CTkLabel(frame,
                                        text=None,
                                        corner_radius=10,
-                                       fg_color='#292929')
-            save_path_label.grid(row=6, column=0, padx=30, pady=10, sticky='nsew', ipadx=8, ipady=8)
+                                       fg_color='#292929',
+                                       wraplength=400)
+            save_path_label.grid(row=6, column=0, padx=30, pady=5, sticky='nsew', ipadx=8, ipady=8)
 
             save_directory = ctk.CTkLabel(frame,
                                           text='Save Directory',
@@ -194,7 +196,7 @@ class App(ctk.CTk):
                                               size=18,
                                               weight='bold'
                                               ))
-            save_directory.grid(row=5, column=0, padx=10, pady=10)
+            save_directory.grid(row=5, column=0, padx=10, pady=5)
             save_path_label.configure(text=f"{self.save_path}")
             print(f"Directory selected: {self.save_path}")
             self.save_path_check = True
@@ -213,7 +215,7 @@ class App(ctk.CTk):
                                                     size=18,
                                                     weight='bold'
                                                 ))
-                run_tool_button.grid(row=7, column=0, padx=10, pady=10)
+                run_tool_button.grid(row=7, column=0, padx=10, pady=5)
     
     def tool_running_window(self):
         

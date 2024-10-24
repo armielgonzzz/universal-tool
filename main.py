@@ -6,6 +6,8 @@ import sys
 from dotenv import load_dotenv
 from interface.display import main as start_ui
 
+load_dotenv(dotenv_path='misc/.env')
+
 # Replace these with your repository details
 GITHUB_USER = os.getenv("USER")
 GITHUB_REPO = os.getenv("REPO")
@@ -40,12 +42,10 @@ def check_for_updates():
         return False
 
 def run_updater():
-    subprocess.Popen(["updater.exe", os.path.basename(sys.argv[0])])
+    subprocess.Popen(["update/run_update.exe", os.path.basename(sys.argv[0])])
     sys.exit()
 
 def main():
-
-    load_dotenv()
 
     if check_for_updates():
         run_updater()

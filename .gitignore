@@ -1,8 +1,8 @@
 venv
 __pycache__
 *.cfg
-updater.py
-updater.exe
+run_update.py
+run_update.exe
 build
 dist
 *.spec
