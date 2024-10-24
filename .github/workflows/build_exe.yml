@@ -31,6 +31,7 @@ jobs:
       # Install PyInstaller and create the .exe with the new name
       - name: Build executable
         run: |
+          pip install pyinstaller
           pyinstaller --onefile main.py
       
       # Debug: List files in the dist directory to check if the .exe was created
