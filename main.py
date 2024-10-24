@@ -16,7 +16,7 @@ def get_latest_release():
         release_data = response.json()
         version = release_data['tag_name']
         for asset in release_data['assets']:
-            if asset['name'] == 'Universal Tool.exe':
+            if asset['name'] == 'CM Tools.exe':
                 download_url = asset['browser_download_url']
                 return version, download_url
     return None, None
@@ -36,7 +36,6 @@ def check_for_updates():
         download_new_version(download_url)
         return True
     else:
-        print("You have the latest version.")
         return False
 
 def run_updater():

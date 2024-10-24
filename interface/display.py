@@ -2,9 +2,6 @@ import os
 import customtkinter as ctk
 from customtkinter import filedialog
 import threading
-
-
-# Import main driver function of all tools
 from tools.clean_up import main as run_clean_up
 
 # Outside function that will center a new pop up window relative to the main window
@@ -62,7 +59,7 @@ class App(ctk.CTk):
         ########################
 
         # Configure window
-        self.title("Marketing Team Tools")
+        self.title("Community Minerals Tools")
         self.geometry(center_main_window(self, 800, 580))
         self.resizable(False, False)
 
@@ -242,8 +239,42 @@ class App(ctk.CTk):
         threading.Thread(target=self.run_clean_up_with_callback, args=(self.file_paths, self.save_path, window)).start()
 
     def run_clean_up_with_callback(self, file_paths, save_path, window):
-        run_clean_up(file_paths, save_path)
-        window.destroy()
+        try:
+            run_clean_up(file_paths, save_path)
+            window.destroy()
+            self.tool_result(result=True)
+
+        except:
+            self.tool_result(result=False)
+
+    def tool_result(self, result: bool):
+        
+        message: str = ""
+        if result:
+            message = "SUCCESSFULLY processed all files"
+        else:
+            message = "Tool run FAILED"
+        
+        tool_result_window = ctk.CTkToplevel()
+        center_new_window(self, tool_result_window)
+        tool_result_window.resizable(False, False)
+        tool_result_window.geometry("400x200")
+        tool_result_window.grid_rowconfigure(0, weight=1)
+        tool_result_window.grid_columnconfigure(0, weight=1)
+        tool_result_window.attributes('-topmost', True)
+        tool_result_window.title("Run Tool")
+        tool_run_label = ctk.CTkLabel(tool_result_window,
+                                      text=message,
+                                      font=ctk.CTkFont(
+                                          size=14,
+                                          weight='normal'))
+        tool_run_label.grid(row=0, column=0, padx=10, pady=(15, 5), sticky="nsew")
+        tool_run_button = ctk.CTkButton(tool_result_window,
+                                        text="OK",
+                                        fg_color='#5b5c5c',
+                                        hover_color='#424343',
+                                        command=lambda: tool_result_window.destroy())
+        tool_run_button.grid(row=1, column=0, padx=10, pady=(5, 15))
 
 
 def main() -> None:

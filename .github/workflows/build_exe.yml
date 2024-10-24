@@ -30,18 +30,18 @@ jobs:
       - name: Build executable
         run: |
           pip install pyinstaller
-          pyinstaller --onefile main.py  # Replace with your main script
+          pyinstaller --onefile --icon=misc/tool_icon.ico main.py
 
       # Rename the .exe file to Universal Tool.exe and archive it
       - name: Rename and archive the .exe
         run: |
           mkdir -p release
-          mv dist/main.exe "release/Universal Tool.exe"
+          mv dist/main.exe "release/CM Tools.exe"
 
       # Upload the renamed .exe file to GitHub Releases
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: "release/Universal Tool.exe"
+          files: "release/CM Tools.exe"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
