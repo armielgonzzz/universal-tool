@@ -1,4 +1,7 @@
 venv
 __pycache__
-.cfg
+*.cfg
 run_update.py
+build
+dist
+*.spec
