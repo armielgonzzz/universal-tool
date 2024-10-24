@@ -1,5 +1,11 @@
-import tkinter as tk
+import os
 import customtkinter as ctk
+from customtkinter import filedialog
+import threading
+
+
+# Import main driver function of all tools
+from tools.clean_up import main as run_clean_up
 
 # Outside function that will center a new pop up window relative to the main window
 def center_new_window(main_window: ctk.CTkFrame,
@@ -33,23 +39,212 @@ def center_new_window(main_window: ctk.CTkFrame,
     # Add delay to avoid bugs in setting new window position
     new_window.after(70, set_geometry)
 
+def center_main_window(screen: ctk.CTkFrame, width: int, height: int) -> str:
+
+    # Get width and height of main window
+    screen_width = screen.winfo_screenwidth()
+    screen_height = screen.winfo_screenheight()
+
+    # Calculate position to center window
+    x = int((screen_width/2) - (width/2))
+    y = int((screen_height/2) - (height/1.5))
+
+    return f"{width}x{height}+{x}+{y}"
+
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        """"""""""""""""""""""""
+        ########################
+        #                      #
         #   MAIN APP WINDOW    #
-        """"""""""""""""""""""""
+        #                      #
+        ########################
 
-        # configure window
-        self.title("Community Minerals Universal Tool")
-        self.geometry(self.center_main_window(800, 580))
+        # Configure window
+        self.title("Marketing Team Tools")
+        self.geometry(center_main_window(self, 800, 580))
         self.resizable(False, False)
 
-        # configure grid layout (4x4)
+        # Configure grid layout (4x4)
         self.grid_columnconfigure(1, weight=1)
-        self.grid_columnconfigure(0, weight=0)
-        self.grid_rowconfigure((0, 1, 2), weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        # Tool Options Frame
+        self.tool_options_frame = ctk.CTkScrollableFrame(self)
+        self.tool_options_frame.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+        self.tool_options_frame.grid_columnconfigure(0, weight=1)
+
+        # Tool Window
+        self.tool_window_frame = ctk.CTkFrame(self)
+        self.tool_window_frame.grid_rowconfigure(0, weight=1)
+        self.tool_window_frame.grid_columnconfigure(0, weight=1)
+        self.tool_window_frame.grid(row=0, column=1, padx=10, pady=10, sticky='nsew')
+
+        # Select from the tool buttons label
+        self.tool_options_label = ctk.CTkLabel(self.tool_options_frame,
+                                               text='Select a tool',
+                                               font=ctk.CTkFont(
+                                                   size=24,
+                                                   weight='bold'
+                                               ))
+        self.tool_options_label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+    
+    ##############################
+    #                            #
+    # PHONE NUMBER CLEAN UP TOOL #
+    #                            #
+    ##############################
+
+        self.clean_phone_tool_button = ctk.CTkButton(self.tool_options_frame,
+                                                     text='Phone Number Cleaning Tool',
+                                                     command=self.display_phone_clean_tool,
+                                                     fg_color='#5b5c5c',
+                                                     hover_color='#424343')
+        self.clean_phone_tool_button.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
+
+    def display_phone_clean_tool(self):
+
+        self.input_file_check = False
+        self.save_path_check = False
+
+        phone_clean_frame = ctk.CTkFrame(self.tool_window_frame)
+        phone_clean_frame.grid_rowconfigure(7, weight=1)
+        phone_clean_frame.grid_columnconfigure(0, weight=1)
+        phone_clean_frame.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
+
+        label = ctk.CTkLabel(phone_clean_frame,
+                             text="Phone Number Clean Up Tool",
+                             font=ctk.CTkFont(
+                                 size=36,
+                                 weight='bold'
+                             ))
+        label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+        
+        select_file_button = ctk.CTkButton(phone_clean_frame,
+                                           text='Select files to process',
+                                           command=lambda: self.open_select_file(phone_clean_frame),
+                                           fg_color='#5b5c5c',
+                                           hover_color='#424343')
+        select_file_button.grid(row=1, column=0, padx=10, pady=20)
+
+        define_save_path_button = ctk.CTkButton(phone_clean_frame,
+                                                text='Save output files to',
+                                                command=lambda: self.select_save_directory(phone_clean_frame),
+                                                fg_color='#5b5c5c',
+                                                hover_color='#424343')
+        define_save_path_button.grid(row=4, column=0, padx=10, pady=20)
+
+
+    def open_select_file(self, frame: ctk.CTkFrame):
+
+        self.file_paths = filedialog.askopenfilenames(title="Select a file",
+                                               filetypes=[("CSV Files", "*.csv"),
+                                                          ("Excel Files", "*.xlsx"),
+                                                          ("All Files", "*.*")])
+        if self.file_paths:
+
+            files_to_process_label = ctk.CTkLabel(frame,
+                                                  text='Files to Process',
+                                                  font=ctk.CTkFont(
+                                                      size=18,
+                                                      weight='bold'
+                                                  ))
+            files_to_process_label.grid(row=2, column=0, padx=10, pady=10)
+
+            selected_files_label = ctk.CTkLabel(frame,
+                                                text=None,
+                                                fg_color='#292929',
+                                                corner_radius=10)
+            selected_files_label.grid(row=3, column=0, padx=30, pady=10, sticky='nsew', ipadx=20, ipady=20)
+
+
+
+            file_names = [os.path.basename(file) for file in self.file_paths]
+            selected_files_label.configure(text="\n".join(file_names))
+            print(f"Files selected: {self.file_paths}")
+            self.input_file_check = True
+
+            if self.input_file_check and self.save_path_check:
+                run_tool_button = ctk.CTkButton(frame,
+                                                text='RUN TOOL',
+                                                command=self.trigger_tool,
+                                                height=36,
+                                                width=240,
+                                                fg_color='#d99125',
+                                                hover_color='#ae741e',
+                                                text_color='#141414',
+                                                corner_radius=50,
+                                                font=ctk.CTkFont(
+                                                    size=18,
+                                                    weight='bold'
+                                                ))
+                run_tool_button.grid(row=7, column=0, padx=10, pady=10)
+    
+    def select_save_directory(self, frame: ctk.CTkFrame):
+
+        self.save_path = filedialog.askdirectory(title="Select save directory")
+        if self.save_path:
+            save_path_label = ctk.CTkLabel(frame,
+                                       text=None,
+                                       corner_radius=10,
+                                       fg_color='#292929')
+            save_path_label.grid(row=6, column=0, padx=30, pady=10, sticky='nsew', ipadx=8, ipady=8)
+
+            save_directory = ctk.CTkLabel(frame,
+                                          text='Save Directory',
+                                          font=ctk.CTkFont(
+                                              size=18,
+                                              weight='bold'
+                                              ))
+            save_directory.grid(row=5, column=0, padx=10, pady=10)
+            save_path_label.configure(text=f"{self.save_path}")
+            print(f"Directory selected: {self.save_path}")
+            self.save_path_check = True
+
+            if self.input_file_check and self.save_path_check:
+                run_tool_button = ctk.CTkButton(frame,
+                                                text='RUN TOOL',
+                                                command=self.trigger_tool,
+                                                height=36,
+                                                width=240,
+                                                fg_color='#d99125',
+                                                hover_color='#ae741e',
+                                                text_color='#141414',
+                                                corner_radius=50,
+                                                font=ctk.CTkFont(
+                                                    size=18,
+                                                    weight='bold'
+                                                ))
+                run_tool_button.grid(row=7, column=0, padx=10, pady=10)
+    
+    def tool_running_window(self):
+        
+        tool_run_window = ctk.CTkToplevel()
+        center_new_window(self, tool_run_window)
+        tool_run_window.resizable(False, False)
+        tool_run_window.geometry("400x200")
+        tool_run_window.grid_columnconfigure(0, weight=1)
+        tool_run_window.grid_rowconfigure(0, weight=1)
+        tool_run_window.attributes('-topmost', True)
+        tool_run_window.title("Run Tool")
+
+        tool_run_label = ctk.CTkLabel(tool_run_window,
+                                      text="Tool is running in background.\nPlease wait for the tool to finish",
+                                      font=ctk.CTkFont(
+                                          size=16))
+        tool_run_label.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+        return tool_run_window
+    
+    def trigger_tool(self):
+        window = self.tool_running_window()
+        threading.Thread(target=self.run_clean_up_with_callback, args=(self.file_paths, self.save_path, window)).start()
+
+    def run_clean_up_with_callback(self, file_paths, save_path, window):
+        run_clean_up(file_paths, save_path)
+        window.destroy()
+
 
 def main() -> None:
 
