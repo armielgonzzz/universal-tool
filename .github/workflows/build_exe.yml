@@ -35,6 +35,9 @@ jobs:
       # Debug: List files in the dist directory to check if the .exe was created
       - name: Check if .exe exists in dist folder
         run: ls -la dist/main
+
+      - name: Check if .exe exists in dist folder 2
+        run: ls -la universal-tool
           
       # Rename the .exe file to Universal Tool.exe and archive it
       - name: Rename and archive the .exe
