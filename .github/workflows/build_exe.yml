@@ -30,21 +30,13 @@ jobs:
       - name: Build executable
         run: |
           pip install pyinstaller
-          pyinstaller --onefile --icon=misc/tool_icon.ico main.py
+          pyinstaller --onefile main.py
           
-      # Debug: List files in the dist directory to check if the .exe was created
-      - name: Check if .exe exists in dist folder
-        run: ls -la dist
-
       # Rename the .exe file to Universal Tool.exe and archive it
       - name: Rename and archive the .exe
         run: |
           mkdir -p release
           mv dist/main.exe "release/CM Tools.exe"
-
-      # Debug: List files in the release directory to ensure the renaming succeeded
-      - name: Check renamed file in release folder
-        run: ls -la release
 
       # Upload the renamed .exe file to GitHub Releases
       - name: Create GitHub Release
