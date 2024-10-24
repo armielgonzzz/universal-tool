@@ -3,11 +3,12 @@ import requests
 import shutil
 import subprocess
 import sys
+from dotenv import load_dotenv
 from interface.display import main as start_ui
 
 # Replace these with your repository details
-GITHUB_USER = 'armielgonzzz'
-GITHUB_REPO = 'universal-tool'
+GITHUB_USER = os.getenv("GITHUB_USER")
+GITHUB_REPO = os.getenv("GITHUB_REPO")
 GITHUB_API_URL = f'https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/releases/latest'
 
 def get_latest_release():
@@ -43,6 +44,9 @@ def run_updater():
     sys.exit()
 
 def main():
+
+    load_dotenv()
+    
     if check_for_updates():
         run_updater()
     else:

@@ -6,3 +6,4 @@ updater.exe
 build
 dist
 *.spec
+*.env
