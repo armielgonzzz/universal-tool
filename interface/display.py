@@ -86,6 +86,13 @@ class App(ctk.CTk):
                                                    weight='bold'
                                                ))
         self.tool_options_label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+
+        welcome_label = ctk.CTkLabel(self.tool_window_frame,
+                                     text="Welcome to\nCommunity Minerals\nTools",
+                                     font=ctk.CTkFont(
+                                         size=36,
+                                         weight='bold'))
+        welcome_label.grid(row=0, column=0, padx=10, pady=10)
     
     ##############################
     #                            #
