@@ -26,7 +26,7 @@ jobs:
 
     - name: Build EXE
       run: |
-        pyinstaller --onefile main.py  # Change to your main script
+        pyinstaller --onefile --icon=misc/tool_icon.ico main.py  # Change to your main script
 
     - name: Create Release
       id: create_release

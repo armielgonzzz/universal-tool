@@ -17,14 +17,14 @@ def get_latest_release():
         release_data = response.json()
         version = release_data['tag_name']
         for asset in release_data['assets']:
-            if asset['name'] == 'CM Tools.exe':
+            if asset['name'] == 'main.exe':
                 download_url = asset['browser_download_url']
                 return version, download_url
     return None, None
 
 def download_new_version(download_url):
     with requests.get(download_url, stream=True) as r:
-        with open("new_version.exe", 'wb') as f:
+        with open("main.exe", 'wb') as f:
             shutil.copyfileobj(r.raw, f)
     print("Downloaded new version.")
 
