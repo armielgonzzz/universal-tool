@@ -34,6 +34,8 @@ def check_for_updates():
     local_version = open('version.txt').read().strip()
     latest_version, download_url = get_latest_release()
 
+    print(f"Lead Management Tools {local_version}")
+
     if latest_version and local_version != latest_version:
         print(f"New Tool Version available: {latest_version}\nUpdating...")
         download_new_version(download_url)
