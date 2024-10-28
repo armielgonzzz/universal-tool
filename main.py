@@ -27,7 +27,8 @@ def get_latest_release():
         for asset in release_data['assets']:
             if asset['name'] == 'main.exe':
                 main_exe_url = asset['browser_download_url']
-            elif asset['name'] == 'Source code (zip)':
+
+            if asset['name'] == 'Source code (zip)':
                 source_zip_url = asset['browser_download_url']
         
         return version, main_exe_url, source_zip_url
