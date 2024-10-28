@@ -28,14 +28,14 @@ def download_new_version(download_url):
     with requests.get(download_url, stream=True) as r:
         with open("main.exe", 'wb') as f:
             shutil.copyfileobj(r.raw, f)
-    print("Downloaded new version.")
+    print("Tool update successful!\nRestarting the tool...")
 
 def check_for_updates():
     local_version = open('version.txt').read().strip()
     latest_version, download_url = get_latest_release()
 
     if latest_version and local_version != latest_version:
-        print(f"New version available: {latest_version}, updating...")
+        print(f"New Tool Version available: {latest_version}\nUpdating...")
         download_new_version(download_url)
 
         # Update the version.txt file with the latest version

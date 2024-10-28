@@ -148,7 +148,8 @@ def main(files: tuple, save_path: str):
         print("Sucessfully processed all files")
 
     except Exception as e:
-        print(f"Error encountered: {e}")
+        raise RuntimeError(f"An error occurred: {e}")
+        
     
 
 if __name__ == "__main__":

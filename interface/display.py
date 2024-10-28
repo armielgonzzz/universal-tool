@@ -59,7 +59,7 @@ class App(ctk.CTk):
         ########################
 
         # Configure window
-        self.title("Community Minerals Tools")
+        self.title("Lead Management Tools")
         self.geometry(center_main_window(self, 800, 580))
         self.resizable(False, False)
 
@@ -88,7 +88,7 @@ class App(ctk.CTk):
         self.tool_options_label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
 
         welcome_label = ctk.CTkLabel(self.tool_window_frame,
-                                     text="Welcome to\nCommunity Minerals\nTools",
+                                     text="Welcome to\nLead Management\nTools",
                                      font=ctk.CTkFont(
                                          size=36,
                                          weight='bold'))
@@ -250,19 +250,21 @@ class App(ctk.CTk):
     def run_clean_up_with_callback(self, file_paths, save_path, window):
         try:
             run_clean_up(file_paths, save_path)
-            window.destroy()
             self.tool_result(result=True)
 
-        except:
-            self.tool_result(result=False)
+        except Exception as e:
+            self.tool_result(e, result=False)
+        
+        finally:
+            window.destroy()
 
-    def tool_result(self, result: bool):
+    def tool_result(self, error_message=None, result: bool=False):
         
         message: str = ""
         if result:
             message = "SUCCESSFULLY processed all files"
         else:
-            message = "Tool run FAILED"
+            message = f"Tool run FAILED\n{error_message}"
         
         tool_result_window = ctk.CTkToplevel()
         center_new_window(self, tool_result_window)
