@@ -276,6 +276,7 @@ class App(ctk.CTk):
         tool_result_window.title("Run Tool")
         tool_run_label = ctk.CTkLabel(tool_result_window,
                                       text=message,
+                                      wraplength=300,
                                       font=ctk.CTkFont(
                                           size=14,
                                           weight='normal'))
