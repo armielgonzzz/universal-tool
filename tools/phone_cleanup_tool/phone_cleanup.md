@@ -51,7 +51,7 @@ The **Phone Number Cleanup Tool** is designed to streamline the process of verif
 ## Requirements
 
 - **Appropriate Input Files Format**  
-  Ensure that the columns of the input files includes the column conditions in the [Features](#features) section
+  Ensure that the columns of the input files includes the `column conditions` in the [Features](#features) section
 
 ---
 
