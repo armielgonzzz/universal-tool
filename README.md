@@ -50,7 +50,7 @@ Follow these steps to install the Lead Management Tools application:
    Updates are checked on launch. If a new version is available, the app will download and install it automatically.
 
 4. **Check the Application Documentation**  
-   Not sure how to use the application or a specific tool? Click the `How to use` button at the lower left side of the app user interface and check the official documentation of the application.
+   Not sure how to use the application or a specific tool? Click the `Official Documentation` button at the lower left side of the app user interface and check the official documentation of the application.
 
 ---
 

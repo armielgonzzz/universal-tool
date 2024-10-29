@@ -7,7 +7,7 @@ The **Phone Number Cleanup Tool** is designed to streamline the process of verif
 ## Table of Contents
 - [Features](#features)
 - [Requirements](#requirements)
-- [How to Use](#how-to-use-phone-cleanup-tool)
+- [How to Use](#how-to-use-phone-number-cleanup-tool)
 - [Troubleshooting](#troubleshooting)
 
 ---

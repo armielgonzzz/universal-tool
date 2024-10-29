@@ -1,7 +1,8 @@
 import os
 import customtkinter as ctk
-from customtkinter import filedialog
 import threading
+import webbrowser
+from customtkinter import filedialog
 from tools.phone_cleanup_tool.clean_up import main as run_clean_up
 
 # Outside function that will center a new pop up window relative to the main window
@@ -67,8 +68,14 @@ class App(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
+        # Left side frame
+        self.left_side_frame = ctk.CTkFrame(self)
+        self.left_side_frame.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+        self.left_side_frame.grid_columnconfigure(0, weight=1)
+        self.left_side_frame.grid_rowconfigure(0, weight=1)
+
         # Tool Options Frame
-        self.tool_options_frame = ctk.CTkScrollableFrame(self)
+        self.tool_options_frame = ctk.CTkScrollableFrame(self.left_side_frame)
         self.tool_options_frame.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
         self.tool_options_frame.grid_columnconfigure(0, weight=1)
 
@@ -93,19 +100,33 @@ class App(ctk.CTk):
                                          size=36,
                                          weight='bold'))
         welcome_label.grid(row=0, column=0, padx=10, pady=10)
+
+        self.documentation_button = ctk.CTkButton(self.left_side_frame,
+                                                     text='Official Documentation',
+                                                     command=self.open_link,
+                                                     fg_color='#5b5c5c',
+                                                     hover_color='#424343',
+                                                     font=ctk.CTkFont(
+                                                         weight='bold'
+                                                     ))
+        self.documentation_button.grid(row=1, column=0, padx=10, pady=(0,10), stick='nsew')
+
+        self.clean_phone_tool_button = ctk.CTkButton(self.tool_options_frame,
+                                                     text='Phone Number Cleanup Tool',
+                                                     command=self.display_phone_clean_tool,
+                                                     fg_color='#5b5c5c',
+                                                     hover_color='#424343')
+        self.clean_phone_tool_button.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
+
+    
+    def open_link(self):
+        webbrowser.open("https://github.com/armielgonzzz/universal-tool/blob/main/README.md")
     
     ##############################
     #                            #
     # PHONE NUMBER CLEAN UP TOOL #
     #                            #
     ##############################
-
-        self.clean_phone_tool_button = ctk.CTkButton(self.tool_options_frame,
-                                                     text='Phone Number Cleaning Tool',
-                                                     command=self.display_phone_clean_tool,
-                                                     fg_color='#5b5c5c',
-                                                     hover_color='#424343')
-        self.clean_phone_tool_button.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
 
     def display_phone_clean_tool(self):
 
