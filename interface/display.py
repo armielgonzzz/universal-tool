@@ -252,19 +252,19 @@ class App(ctk.CTk):
             run_clean_up(file_paths, save_path)
             self.tool_result(result=True)
 
-        except Exception as e:
-            self.tool_result(e, result=False)
+        except:
+            self.tool_result(result=False)
         
         finally:
             window.destroy()
 
-    def tool_result(self, error_message=None, result: bool=False):
+    def tool_result(self, result: bool=False):
         
         message: str = ""
         if result:
             message = "SUCCESSFULLY processed all files"
         else:
-            message = f"Tool run FAILED\n{error_message}"
+            message = f"Tool run FAILED"
         
         tool_result_window = ctk.CTkToplevel()
         center_new_window(self, tool_result_window)
