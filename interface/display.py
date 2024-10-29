@@ -2,7 +2,7 @@ import os
 import customtkinter as ctk
 from customtkinter import filedialog
 import threading
-from tools.clean_up import main as run_clean_up
+from tools.phone_cleanup_tool.clean_up import main as run_clean_up
 
 # Outside function that will center a new pop up window relative to the main window
 def center_new_window(main_window: ctk.CTkFrame,
