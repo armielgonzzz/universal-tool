@@ -6,8 +6,8 @@ The **Phone Number Cleanup Tool** is designed to streamline the process of verif
 
 ## Table of Contents
 - [Features](#features)
-- [How to Use](#how-to-use-phone-cleanup-tool)
 - [Requirements](#requirements)
+- [How to Use](#how-to-use-phone-cleanup-tool)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -48,6 +48,13 @@ The **Phone Number Cleanup Tool** is designed to streamline the process of verif
 
 ---
 
+## Requirements
+
+- **Appropriate Input Files Format**  
+  Ensure that the columns of the input files includes the column conditions in the [Features](#features) section
+
+---
+
 ## How to Use Phone Number Cleanup Tool
 
 1. **Select Phone Number Cleanup Tool**  
@@ -69,13 +76,6 @@ The **Phone Number Cleanup Tool** is designed to streamline the process of verif
 
 4. **Review Output Data**  
    Go the the save directory that you have defined earlier and review the output files.
-
----
-
-## Requirements
-
-- **Appropriate Input Files Format**  
-  Ensure that the columns of the input files includes the column conditions in the [Features](#features) section
 
 ---
 

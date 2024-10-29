@@ -10,7 +10,6 @@ Welcome to the **Lead Management Tools** documentation! This app consolidates al
 - [Installation](#installation)
 - [How to Use](#how-to-use)
 - [Tools Included](#tools-included)
-- [App Requirements](#requirements)
 - [Support](#support)
 
 ---
@@ -36,9 +35,6 @@ Follow these steps to install the Lead Management Tools application:
 
 1. **Run the Installer**  
    Double-click the `LeadManagementToolsInstaller.exe` to start the installation process. Follow the on-screen instructions to complete the setup.
-
-2. **Auto-Update**  
-   On startup, the application will download necessary files and check for updates to ensure you have the latest tools available.
 
 ---
 
