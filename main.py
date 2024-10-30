@@ -52,11 +52,24 @@ def run_updater():
     subprocess.Popen(["update/run_update.exe", os.path.basename(sys.argv[0])])
     sys.exit()
 
+def create_directories() -> None:
+
+    directories = [
+        './data',
+        './data/pipedrive',
+        './data/tz_file'
+        ]
+    
+    for dir in directories:
+        os.makedirs(dir, exist_ok=True)
+
+
 def main():
 
     if check_for_updates():
         run_updater()
     else:
+        create_directories()
         start_ui()
 
 if __name__ == "__main__":
