@@ -408,7 +408,7 @@ def get_timezone(row, tz_dict: dict):
 
 def get_timezone_dict() -> dict:
 
-    timezone_df = pd.read_csv(f"C:/Users/armie/work/cm_tools/universal_tool/data/tz_file/Time Zones.csv", low_memory=False)
+    timezone_df = pd.read_csv("./data/tz_file/Time Zones.csv", low_memory=False)
     timezone_df['area_code'] = timezone_df['area_code'].astype('string')
     timezone_dict = timezone_df.set_index('area_code')['pipedrive_eq'].to_dict()
 
