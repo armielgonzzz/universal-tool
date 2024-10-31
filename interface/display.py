@@ -3,6 +3,7 @@ import customtkinter as ctk
 import threading
 import webbrowser
 from customtkinter import filedialog
+from tools.text_inactive_tool.text_inactive import main as run_text_inactive
 from tools.phone_cleanup_tool.clean_up import main as run_clean_up
 
 # Outside function that will center a new pop up window relative to the main window
@@ -94,12 +95,6 @@ class App(ctk.CTk):
                                                ))
         self.tool_options_label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
 
-        welcome_label = ctk.CTkLabel(self.tool_window_frame,
-                                     text="Welcome to\nLead Management\nTools",
-                                     font=ctk.CTkFont(
-                                         size=36,
-                                         weight='bold'))
-        welcome_label.grid(row=0, column=0, padx=10, pady=10)
 
         self.documentation_button = ctk.CTkButton(self.left_side_frame,
                                                      text='Official Documentation',
@@ -116,7 +111,24 @@ class App(ctk.CTk):
                                                      command=self.display_phone_clean_tool,
                                                      fg_color='#5b5c5c',
                                                      hover_color='#424343')
-        self.clean_phone_tool_button.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
+        self.clean_phone_tool_button.grid(row=1, column=0, padx=10, pady=5, sticky='nsew')
+
+        self.text_inactive_button = ctk.CTkButton(self.tool_options_frame,
+                                                     text='Text Inactive Tool',
+                                                     command=lambda:self.show_frame(TextInactive),
+                                                     fg_color='#5b5c5c',
+                                                     hover_color='#424343')
+        self.text_inactive_button.grid(row=2, column=0, padx=10, pady=5, sticky='nsew')
+
+        self.current_frame = None
+        self.input_file_check, self.save_path_check = False, False
+        self.show_frame(InitialFrame)
+
+    def show_frame(self, frame_class):
+        """Destroys the current frame and replaces it with a new one."""
+        if self.current_frame is not None:
+            self.current_frame.destroy()
+        self.current_frame = frame_class(self.tool_window_frame, self)
 
     
     def open_link(self):
@@ -130,15 +142,12 @@ class App(ctk.CTk):
 
     def display_phone_clean_tool(self):
 
-        self.input_file_check = False
-        self.save_path_check = False
+        self.current_frame = ctk.CTkFrame(self.tool_window_frame)
+        self.current_frame.grid_rowconfigure(7, weight=1)
+        self.current_frame.grid_columnconfigure(0, weight=1)
+        self.current_frame.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
 
-        phone_clean_frame = ctk.CTkFrame(self.tool_window_frame)
-        phone_clean_frame.grid_rowconfigure(7, weight=1)
-        phone_clean_frame.grid_columnconfigure(0, weight=1)
-        phone_clean_frame.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
-
-        label = ctk.CTkLabel(phone_clean_frame,
+        label = ctk.CTkLabel(self.current_frame,
                              text="Phone Number Clean Up Tool",
                              font=ctk.CTkFont(
                                  size=36,
@@ -146,27 +155,25 @@ class App(ctk.CTk):
                              ))
         label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
         
-        select_file_button = ctk.CTkButton(phone_clean_frame,
+        select_file_button = ctk.CTkButton(self.current_frame,
                                            text='Select files to process',
-                                           command=lambda: self.open_select_file(phone_clean_frame),
+                                           command=lambda: self.open_select_file(frame=self.current_frame, func=run_clean_up),
                                            fg_color='#5b5c5c',
                                            hover_color='#424343')
         select_file_button.grid(row=1, column=0, padx=10, pady=5)
 
-        define_save_path_button = ctk.CTkButton(phone_clean_frame,
+        define_save_path_button = ctk.CTkButton(self.current_frame,
                                                 text='Save output files to',
-                                                command=lambda: self.select_save_directory(phone_clean_frame),
+                                                command=lambda: self.select_save_directory(frame=self.current_frame, func=run_clean_up),
                                                 fg_color='#5b5c5c',
                                                 hover_color='#424343')
         define_save_path_button.grid(row=4, column=0, padx=10, pady=5)
 
 
-    def open_select_file(self, frame: ctk.CTkFrame):
+    def open_select_file(self, frame: ctk.CTkFrame, func):
 
         self.file_paths = filedialog.askopenfilenames(title="Select a file",
-                                               filetypes=[("CSV Files", "*.csv"),
-                                                          ("Excel Files", "*.xlsx"),
-                                                          ("All Files", "*.*")])
+                                               filetypes=[("All Files", "*.*")])
         if self.file_paths:
 
             files_to_process_label = ctk.CTkLabel(frame,
@@ -194,7 +201,7 @@ class App(ctk.CTk):
             if self.input_file_check and self.save_path_check:
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
-                                                command=self.trigger_tool,
+                                                command=lambda: self.trigger_tool(func, self.file_paths, self.save_path),
                                                 height=36,
                                                 width=240,
                                                 fg_color='#d99125',
@@ -207,7 +214,7 @@ class App(ctk.CTk):
                                                 ))
                 run_tool_button.grid(row=7, column=0, padx=10, pady=5)
     
-    def select_save_directory(self, frame: ctk.CTkFrame):
+    def select_save_directory(self, frame: ctk.CTkFrame, func):
 
         self.save_path = filedialog.askdirectory(title="Select save directory")
         if self.save_path:
@@ -232,7 +239,7 @@ class App(ctk.CTk):
             if self.input_file_check and self.save_path_check:
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
-                                                command=self.trigger_tool,
+                                                command=lambda: self.trigger_tool(func, self.file_paths, self.save_path),
                                                 height=36,
                                                 width=240,
                                                 fg_color='#d99125',
@@ -264,13 +271,13 @@ class App(ctk.CTk):
 
         return tool_run_window
     
-    def trigger_tool(self):
+    def trigger_tool(self, func, *args, **kwargs):
         window = self.tool_running_window()
-        threading.Thread(target=self.run_clean_up_with_callback, args=(self.file_paths, self.save_path, window)).start()
+        threading.Thread(target=self.run_clean_up_with_callback, args=(window, func, *args), kwargs=kwargs).start()
 
-    def run_clean_up_with_callback(self, file_paths, save_path, window):
+    def run_clean_up_with_callback(self, window, func, *args, **kwargs):
         try:
-            run_clean_up(file_paths, save_path)
+            func(*args, **kwargs)
             self.tool_result(result=True)
 
         except:
@@ -308,6 +315,56 @@ class App(ctk.CTk):
                                         hover_color='#424343',
                                         command=lambda: tool_result_window.destroy())
         tool_run_button.grid(row=1, column=0, padx=10, pady=(5, 15))
+
+class InitialFrame(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+        self.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        welcome_label = ctk.CTkLabel(self,
+                                     text="Welcome to\nLead Management\nTools",
+                                     font=ctk.CTkFont(
+                                         size=36,
+                                         weight='bold'))
+        welcome_label.grid(row=0, column=0, padx=10, pady=10)
+
+
+class TextInactive(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
+        self.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
+        self.grid_columnconfigure(0, weight=1)
+        self.controller.input_file_check = False
+        self.controller.save_path_check = False
+
+        label = ctk.CTkLabel(self,
+                             text="Text Inactive Tool",
+                             font=ctk.CTkFont(
+                                 size=36,
+                                 weight='bold'
+                             ))
+        label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+        
+        select_file_button = ctk.CTkButton(self,
+                                           text='Select files to process',
+                                           command=lambda: self.controller.open_select_file(frame=self,
+                                                                                            func=run_text_inactive),
+                                           fg_color='#5b5c5c',
+                                           hover_color='#424343')
+        select_file_button.grid(row=1, column=0, padx=10, pady=5)
+
+        define_save_path_button = ctk.CTkButton(self,
+                                                text='Save output files to',
+                                                command=lambda: self.controller.select_save_directory(frame=self,
+                                                                                                      func=run_text_inactive),
+                                                fg_color='#5b5c5c',
+                                                hover_color='#424343')
+        define_save_path_button.grid(row=4, column=0, padx=10, pady=5)
+
 
 
 def main() -> None:

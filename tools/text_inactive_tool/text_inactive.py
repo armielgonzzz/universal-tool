@@ -2,10 +2,10 @@ import os
 import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
-from sql_queries import *
-from get_pipedrive_data import main as update_pipedrive
-from follow_up import process_fu
-from new_deals import process_new_deals
+from .sql_queries import *
+from .get_pipedrive_data import main as update_pipedrive
+from .follow_up import process_fu
+from .new_deals import process_new_deals
 
 def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]':
 
@@ -84,4 +84,4 @@ def main(files: tuple, save_path: str):
 
 
 if __name__ == "__main__":
-    main(None, None)
+    main()

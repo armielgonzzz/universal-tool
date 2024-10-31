@@ -424,7 +424,7 @@ def process_new_deals(no_deal_id_final: pd.DataFrame,
 
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-    print("Processing Text Inactive - New Deals")
+    print("Creating New Deals")
 
     no_deal_id_final['id'] = no_deal_id_final['id']
     no_deal_id_final = no_deal_id_final[[

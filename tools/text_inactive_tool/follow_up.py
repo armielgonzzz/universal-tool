@@ -108,7 +108,7 @@ def process_fu(df: pd.DataFrame,
                save_path: str,
                i: int) -> pd.DataFrame:
     
-    print("Processing Follow up - Text Inactive")
+    print("Creating Follow up")
     
     format_not_phone_number(df)
     fu_df, no_deals_df, df_exploded = search_phone_number(df, pipedrive_df)
