@@ -7,3 +7,6 @@ build
 dist
 *.spec
 *.env
+output
+data
+*.url
