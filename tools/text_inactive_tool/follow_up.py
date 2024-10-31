@@ -8,6 +8,7 @@ def format_phone(row: str) -> str:
         return row[8:11] + row[13:16] + row[17:21]
 
 def format_not_phone_number(df: pd.DataFrame):
+    pd.options.mode.chained_assignment = None
     df['Phone'] = df.apply(
         lambda row: format_phone(row['Note']) if not str(row['Phone']).isdigit() else row['Phone'],
         axis=1)
@@ -72,9 +73,12 @@ def get_cm_db_deals(no_deals_df: pd.DataFrame,
     merge_pd_deal_id_df.rename(columns={'Deal - ID': 'Deal ID'}, inplace=True)
     cm_deals_final_df = merge_pd_deal_id_df[['Note', 'Activity - Subject', 'Activity - Due date', 'all_deal_id']]
 
-    return cm_deals_final_df, no_deal_id_final
+    return cm_deals_final_df, no_deal_id_final, cm_db_not_exist
 
-def export_fu(fu_df: pd.DataFrame, cm_deals_final_df: pd.DataFrame) -> None:
+def export_fu(fu_df: pd.DataFrame,
+              cm_deals_final_df: pd.DataFrame,
+              save_path: str,
+              i: int) -> None:
 
     fu_final_df = pd.concat([fu_df, cm_deals_final_df])
     fu_final_df['Assigned to user'] = 'Data Team'
@@ -94,27 +98,27 @@ def export_fu(fu_df: pd.DataFrame, cm_deals_final_df: pd.DataFrame) -> None:
         'Type',
         'Due date',
         'Deal ID'
-    ]].to_excel('C:/Users/armie/work/cm_tools/universal_tool/output/FU - Text Inactive.xlsx', index=False)
+    ]].to_excel(f'{save_path}/{i}. FU - Text Inactive.xlsx', index=False)
 
 
 def process_fu(df: pd.DataFrame,
                pipedrive_df: pd.DataFrame,
                phone_number_df: pd.DataFrame,
-               cm_db_df: pd.DataFrame):
+               cm_db_df: pd.DataFrame,
+               save_path: str,
+               i: int) -> pd.DataFrame:
     
     print("Processing Follow up - Text Inactive")
-
-    pd.options.mode.chained_assignment = None
     
     format_not_phone_number(df)
     fu_df, no_deals_df, df_exploded = search_phone_number(df, pipedrive_df)
-    cm_deals_final_df, no_deal_id_final = get_cm_db_deals(no_deals_df,
-                                                          phone_number_df,
-                                                          df_exploded,
-                                                          cm_db_df)
-    export_fu(fu_df, cm_deals_final_df)
+    cm_deals_final_df, no_deal_id_final, cm_db_not_exist = get_cm_db_deals(no_deals_df,
+                                                                           phone_number_df,
+                                                                           df_exploded,
+                                                                           cm_db_df)
+    export_fu(fu_df, cm_deals_final_df, save_path, i)
 
-    return no_deal_id_final
+    return no_deal_id_final, cm_db_not_exist
     
 if __name__ == "__main__":
     process_fu()

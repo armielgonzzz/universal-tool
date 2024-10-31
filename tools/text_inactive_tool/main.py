@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from sql_queries import *
 from get_pipedrive_data import main as update_pipedrive
 from follow_up import process_fu
+from new_deals import process_new_deals
 
 def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]':
 
@@ -48,15 +49,34 @@ def read_file(path: str) -> pd.DataFrame:
     else:
         return None
 
-def main(files: tuple, save_path: str = './output'):
+def main(files: tuple, save_path: str):
 
     try:
         load_dotenv(dotenv_path='misc/.env')
-        # update_pipedrive()
-        phone_number_df, emaiL_address_df, serial_numbers_df, cm_db_df = read_cm_live_db()
-        df = read_file('./tools/text_inactive_tool/Inactive Deal Tagging 102924.xlsx')
+        update_pipedrive()
+        phone_number_df, email_address_df, serial_numbers_df, cm_db_df = read_cm_live_db()
         pipedrive_df = read_file('./data/pipedrive/pipedrive_data.csv')
-        no_deal_id_final = process_fu(df, pipedrive_df, phone_number_df, cm_db_df)
+
+        for i, file in enumerate(files, start=1):
+
+            print(f"Processing {os.path.basename(file)}")
+
+            df = read_file(file)
+            no_deal_id_final, cm_db_not_exist = process_fu(df,
+                                                           pipedrive_df,
+                                                           phone_number_df,
+                                                           cm_db_df,
+                                                           save_path,
+                                                           i)
+            process_new_deals(no_deal_id_final,
+                            cm_db_not_exist,
+                            email_address_df,
+                            serial_numbers_df,
+                            cm_db_df,
+                            save_path,
+                            i)
+
+        print("Successfully Processed All Files")
 
     except Exception as e:
         print(f"An error occured: {e}")
