@@ -60,6 +60,8 @@ Each tool below is included in the Lead Management Tools app. Click the links fo
 
 - [Phone Number Cleanup Tool](./tools/phone_cleanup_tool/phone_cleanup.md) - Filters leads from selected input files and cleans up the file for non-CRM leads and other specific column conditions.
 
+- [Text Inactive Tool](./tools/text_inactive_tool/text_inactive.md) - Processes Text Active Leads and creates a follow up or new deals in Pipedrive CRM
+
 Each of these tools operates independently, allowing you to use the necessary functionality without requiring access to all tools simultaneously.
 
 ---
