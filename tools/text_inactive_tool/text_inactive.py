@@ -53,8 +53,8 @@ def main(files: tuple, save_path: str):
 
     try:
         load_dotenv(dotenv_path='misc/.env')
-        update_pipedrive()
         phone_number_df, email_address_df, serial_numbers_df, cm_db_df = read_cm_live_db()
+        update_pipedrive()
         pipedrive_df = read_file('./data/pipedrive/pipedrive_data.csv')
 
         for i, file in enumerate(files, start=1):
