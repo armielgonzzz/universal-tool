@@ -63,11 +63,11 @@ The **Text Inactive Tool** is designed to process Text Inactive Leads and create
     - `Reason for Not Selling`
     - `Contact Confirmation`
 
-- **Community Minerals Pipedrive Account**
-    Make sure you have an account in Pipedrive issued by Community Minerals admins, as the tool will need the **Pipedrive API** from your Pipedrive Account to streamline the process of verifying the leads in Pipedrive CRM thru API Calls.
+- **Community Minerals Pipedrive Account**  
+    Make sure you have an account in Pipedrive issued by Community Minerals admins, as the tool will need the ***Pipedrive API*** from your Pipedrive Account to streamline the process of verifying the leads in Pipedrive CRM thru API Calls.
 
-- **Community Minerals Database Credentials**
-    Lastly, you should have the credentials for a database user in Community Minerals database. This user should have proper grants and authorization in order for the tool to communicate the with database and extract the needed data. Contact the database admin if you don't have your database user credentials yet.
+- **Community Minerals Database Credentials**  
+    Lastly, you should have the credentials for a database user in Community Minerals database. This user should have proper grants and authorization in order for the tool to communicate with the database and extract the needed data. Contact the database admin if you don't have your database user credentials yet.
 
 ---
 
