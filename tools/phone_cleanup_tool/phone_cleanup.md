@@ -77,6 +77,11 @@ The **Phone Number Cleanup Tool** is designed to streamline the process of verif
 4. **Review Output Data**  
    Go the the save directory that you have defined earlier and review the output files.
 
+5. **Accomplish the Output Checklist**
+    - If the tool run is successful, an **Output Checklist** window should pop up.
+    - This list will guide you on what to check and verify from the output file(s) of the tool.
+    - Click `confirm` button at the bottom of the window after you've checked all of the **Output Checklist's** checkboxes.
+
 ---
 
 ## Troubleshooting

@@ -112,6 +112,7 @@ class App(ctk.CTk):
                                                      fg_color='#5b5c5c',
                                                      hover_color='#424343')
         self.clean_phone_tool_button.grid(row=1, column=0, padx=10, pady=5, sticky='nsew')
+        self.clean_phone_tool_button.bind("<Button-1>", lambda event: self.track_button_click(1))
 
         self.text_inactive_button = ctk.CTkButton(self.tool_options_frame,
                                                      text='Text Inactive Tool',
@@ -119,10 +120,94 @@ class App(ctk.CTk):
                                                      fg_color='#5b5c5c',
                                                      hover_color='#424343')
         self.text_inactive_button.grid(row=2, column=0, padx=10, pady=5, sticky='nsew')
+        self.text_inactive_button.bind("<Button-1>", lambda event: self.track_button_click(2))
 
+        self.clicked_button_id = ctk.IntVar()
         self.current_frame = None
         self.input_file_check, self.save_path_check = False, False
         self.show_frame(InitialFrame)
+
+    ##################
+    #                #
+    # HELPER METHODS #
+    #                #
+    ##################
+
+    def display_checklist(self, window):
+        
+        # Function to check if all checkboxes are checked
+        def check_all_selected():
+            if all(state.get() for state in checkbox_states):
+                confirm_button.configure(state="normal", fg_color='#5b5c5c')
+            else:
+                confirm_button.configure(state="disabled", fg_color='#424343')
+
+        window.destroy()
+
+        checklist_window = ctk.CTkToplevel()
+        center_new_window(self, checklist_window)
+        checklist_window.resizable(False, False)
+        checklist_window.geometry("400x400")
+        checklist_window.grid_columnconfigure(0, weight=1)
+        checklist_window.grid_rowconfigure(0, weight=1)
+        checklist_window.attributes('-topmost', True)
+        checklist_window.protocol("WM_DELETE_WINDOW", lambda: None)
+        checklist_window.title("Output Checklist")
+        checklist_window.grid_rowconfigure(1, weight=1)
+        checklist_window.grid_columnconfigure(0, weight=1)
+        checklist_scrollable_frame = ctk.CTkScrollableFrame(checklist_window,
+                                                            corner_radius=20)
+        checklist_scrollable_frame.grid(row=1, column=0, padx=10, pady=5, sticky="nsew", ipadx=5, ipady=5)
+
+        checkbox_states = []
+        output_checklist_dict = {
+            1 : ["Correct output column names",
+                 "No Duplicates in phone_number column",
+                 "Correctness of tagging per lead from\ncolumn reason_for_removal",
+                 'Multiple tagging for reason_for_removal\nwith separator of " , "',
+                 "Output file name and format"
+                 ],
+            
+            2: ["Correct output column names",
+                "Two output files if tool created new deals\n(FU and New Deals)",
+                "No blank values for column Deal ID in FU file",
+                'Multiple Deal IDs in FU file with separator of " | "',
+                '"Text Inactive - For Review" value in Deal - Label column',
+                "Proper row value and format in columns Deal - Title,\nDeal - Deal Summary, Person - Name and Note (if any)",
+                "Person - Phone, Person - Phone 1 not blank",
+                "Importing of output files to Pipedrive is successful"
+                ]
+        }
+        checkbox_labels = output_checklist_dict[self.clicked_button_id.get()]
+
+        checklist_label = ctk.CTkLabel(checklist_window,
+                                       text="Verify the following from the output file(s)",
+                                       font=ctk.CTkFont(
+                                           size=18,
+                                           weight='bold'
+                                       ))
+        checklist_label.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+
+        # Create checkboxes for each item in the list
+        for label in checkbox_labels:
+            state = ctk.BooleanVar()
+            checkbox = ctk.CTkCheckBox(checklist_scrollable_frame,
+                                       text=label,
+                                       variable=state,
+                                       command=check_all_selected)
+            checkbox.pack(pady=5, anchor='w')
+            checkbox_states.append(state)
+        
+        confirm_button = ctk.CTkButton(checklist_window,
+                                       text="Confirm",
+                                       state="disabled",
+                                       fg_color='#424343',
+                                       hover_color='#424343',
+                                       command=checklist_window.destroy)
+        confirm_button.grid(row=2, column=0, padx=5, pady=(5,10))
+
+    def track_button_click(self, button_id):
+        self.clicked_button_id.set(button_id)
 
     def show_frame(self, frame_class):
         """Destroys the current frame and replaces it with a new one."""
@@ -287,13 +372,7 @@ class App(ctk.CTk):
             window.destroy()
 
     def tool_result(self, result: bool=False):
-        
-        message: str = ""
-        if result:
-            message = "SUCCESSFULLY processed all files"
-        else:
-            message = f"Tool run FAILED"
-        
+
         tool_result_window = ctk.CTkToplevel()
         center_new_window(self, tool_result_window)
         tool_result_window.resizable(False, False)
@@ -302,8 +381,9 @@ class App(ctk.CTk):
         tool_result_window.grid_columnconfigure(0, weight=1)
         tool_result_window.attributes('-topmost', True)
         tool_result_window.title("Run Tool")
+
         tool_run_label = ctk.CTkLabel(tool_result_window,
-                                      text=message,
+                                      text="SUCCESSFULLY processed all files" if result else "Tool run FAILED",
                                       wraplength=300,
                                       font=ctk.CTkFont(
                                           size=14,
@@ -313,7 +393,8 @@ class App(ctk.CTk):
                                         text="OK",
                                         fg_color='#5b5c5c',
                                         hover_color='#424343',
-                                        command=lambda: tool_result_window.destroy())
+                                        command=lambda:
+                                        self.display_checklist(tool_result_window) if result else tool_result_window.destroy())
         tool_run_button.grid(row=1, column=0, padx=10, pady=(5, 15))
 
 class InitialFrame(ctk.CTkFrame):
