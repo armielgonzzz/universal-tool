@@ -15,7 +15,7 @@ def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Dat
         user = os.getenv('DB_USER')
         name = os.getenv('DB_NAME')
         password = os.getenv('DB_PASSWORD')
-        engine = create_engine(f'mysql+mysqlconnector://{user}:{password}@{host}/{name}')
+        engine = create_engine(f'mysql+pymysql://{user}:{password}@{host}/{name}')
 
         print(f'Reading Community Minerals Database')
 
@@ -32,8 +32,8 @@ def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Dat
 
         return phone_number_df, emaiL_address_df, serial_numbers_df, cm_db_df
 
-    except Exception:
-        return None,None,None,None
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while reading from the database: {e}")
 
     finally:
         engine.dispose()
