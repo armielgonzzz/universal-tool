@@ -60,7 +60,7 @@ The **Phone Number Cleanup Tool** is designed to streamline the process of verif
 1. **Select Phone Number Cleanup Tool**  
    Click `Phone Number Cleanup Tool` from the tool selection area in the left-hand side of the application UI.
 
-1. **Select Input Files**  
+2. **Select Input Files**  
    From the tool interface area in the right-hand side, select the input files by clicking `Select files to process` button. You can select multiple input files all at once.  
    
    **IMPORTANT NOTE!**
@@ -68,16 +68,16 @@ The **Phone Number Cleanup Tool** is designed to streamline the process of verif
       - If your input files are in .csv file format, make sure you have saved the .csv file in `UTF-8` Encoding.
       - You can do this by clicking the `Save as` button in Microsoft Excel, then click `Save as type`, then select `CSV UTF-8 (Comma delimited)`.
 
-2. **Where to Save Output Files**  
+3. **Where to Save Output Files**  
    Click the `Save output files to` button to define where you want the output files to be saved into once the tool is done processing the input files.
 
-3. **Run The Tool**  
+4. **Run The Tool**  
    After defining the input files and save directory, you can now click `RUN TOOL` and wait for the tool to finish processing the files.
 
-4. **Review Output Data**  
+5. **Review Output Data**  
    Go the the save directory that you have defined earlier and review the output files.
 
-5. **Accomplish the Output Checklist**
+6. **Accomplish the Output Checklist**
     - If the tool run is successful, an **Output Checklist** window should pop up.
     - This list will guide you on what to check and verify from the output file(s) of the tool.
     - Click `confirm` button at the bottom of the window after you've checked all of the **Output Checklist's** checkboxes.
