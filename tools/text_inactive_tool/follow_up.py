@@ -89,7 +89,7 @@ def export_fu(fu_df: pd.DataFrame,
         'Activity - Subject': 'Subject',
         'Activity - Due date': 'Due date',
         'all_deal_id': 'Deal ID'})
-    drop_dupes_df = rename_df.drop_duplicates(subset=['Subject', 'Due date'])
+    drop_dupes_df = rename_df.drop_duplicates(subset=['Activity note', 'Due date'])
     drop_dupes_df[[
         'Activity note',
         'Assigned to user',

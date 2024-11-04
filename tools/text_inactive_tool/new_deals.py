@@ -421,48 +421,11 @@ def process_new_deals(no_deal_id_final: pd.DataFrame,
                       cm_db_df: pd.DataFrame,
                       save_path: str,
                       i: int) -> None:
-
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-    print("Creating New Deals")
-
-    no_deal_id_final['id'] = no_deal_id_final['id']
-    no_deal_id_final = no_deal_id_final[[
-        'Activity - Subject',
-        'Note',
-        'Activity - Due date',
-        'Phone',
-        'Stage',
-        'Marketing Medium',
-        'Inbound Medium',
-        'Non-voice Qualification Channel',
-        'QA Tracking Flag',
-        'Deal Status',
-        'Reason for Not Selling',
-        'Contact Confirmation',
-        'id'
-        ]]
-
-    # New Deals & Multiple Result
-    added_email_df = add_email_columns(no_deal_id_final, email_address_df)
-    added_serials_df = add_serial_number(added_email_df, serial_numbers_df)
-    added_cm_db_details_df = add_cm_db_details(added_serials_df, cm_db_df)
-    added_new_db_id_df = add_new_database_id(added_cm_db_details_df)
-    added_deal_title_df = add_deal_title(added_new_db_id_df)
-    added_deal_county_df = add_deal_county(added_deal_title_df)
-    added_mailing_address_df = add_mailing_address(added_deal_county_df)
-    added_person_name_df = add_person_name(added_mailing_address_df)
-    added_constants_df = add_constant_columns(added_person_name_df)
-    multi_tagged_df = tag_multi_result(added_constants_df)
-
-    # No Result
-    no_result_df = no_result_constants(cm_db_not_exist)
-    final_new_deals_df = pd.concat([multi_tagged_df, no_result_df])
-    timezone_dict = get_timezone_dict()
-    final_new_deals_df['Person - Timezone'] = final_new_deals_df.apply(get_timezone,
-                                                                    tz_dict=timezone_dict,
-                                                                    axis=1)
-    new_deals_export_df = final_new_deals_df[[
+    
+    if no_deal_id_final.empty and cm_db_not_exist.empty:
+        return None
+    
+    output_columns = [
         'Deal - Title',
         'Deal - Label',
         'Deal - Deal Stage',
@@ -514,7 +477,56 @@ def process_new_deals(no_deal_id_final: pd.DataFrame,
         'Deal ID',
         'Note (if any)',
         'Person - Timezone'
-    ]].sort_values(by=['Due date'])
+    ]
+
+    # New Deals and Multiple result
+    if not no_deal_id_final.empty:
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        no_deal_id_final['id'] = no_deal_id_final['id']
+        no_deal_id_final = no_deal_id_final[[
+            'Activity - Subject',
+            'Note',
+            'Activity - Due date',
+            'Phone',
+            'Stage',
+            'Marketing Medium',
+            'Inbound Medium',
+            'Non-voice Qualification Channel',
+            'QA Tracking Flag',
+            'Deal Status',
+            'Reason for Not Selling',
+            'Contact Confirmation',
+            'id'
+            ]]
+
+        added_email_df = add_email_columns(no_deal_id_final, email_address_df)
+        added_serials_df = add_serial_number(added_email_df, serial_numbers_df)
+        added_cm_db_details_df = add_cm_db_details(added_serials_df, cm_db_df)
+        added_new_db_id_df = add_new_database_id(added_cm_db_details_df)
+        added_deal_title_df = add_deal_title(added_new_db_id_df)
+        added_deal_county_df = add_deal_county(added_deal_title_df)
+        added_mailing_address_df = add_mailing_address(added_deal_county_df)
+        added_person_name_df = add_person_name(added_mailing_address_df)
+        added_constants_df = add_constant_columns(added_person_name_df)
+        multi_tagged_df = tag_multi_result(added_constants_df)
+    else:
+        multi_tagged_df = pd.DataFrame(columns=output_columns)
+
+    # No Result
+    if not cm_db_not_exist.empty:
+        no_result_df = no_result_constants(cm_db_not_exist)
+    else:
+        no_result_df = pd.DataFrame(columns=output_columns)
+
+    # Combine new deals, multiple result and no result
+    final_new_deals_df = pd.concat([multi_tagged_df, no_result_df])
+    timezone_dict = get_timezone_dict()
+    final_new_deals_df['Person - Timezone'] = final_new_deals_df.apply(get_timezone,
+                                                                    tz_dict=timezone_dict,
+                                                                    axis=1)
+    new_deals_export_df = final_new_deals_df[output_columns].sort_values(by=['Due date'])
+
+    print("Creating New Deals")
 
     new_deals_export_df.to_excel(f'{save_path}/{i}. New Deals - Text Inactive.xlsx', index=False)
 

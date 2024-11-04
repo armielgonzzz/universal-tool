@@ -194,6 +194,8 @@ class App(ctk.CTk):
             checkbox = ctk.CTkCheckBox(checklist_scrollable_frame,
                                        text=label,
                                        variable=state,
+                                       fg_color='green',
+                                       hover_color='green',
                                        command=check_all_selected)
             checkbox.pack(pady=5, anchor='w')
             checkbox_states.append(state)
@@ -226,6 +228,8 @@ class App(ctk.CTk):
     ##############################
 
     def display_phone_clean_tool(self):
+
+        self.input_file_check, self.save_path_check = False, False
 
         self.current_frame = ctk.CTkFrame(self.tool_window_frame)
         self.current_frame.grid_rowconfigure(7, weight=1)
@@ -417,6 +421,10 @@ class TextInactive(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
+
+        self.controller.input_file_check = False
+        self.controller.save_path_check = False
+
         self.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
         self.grid_columnconfigure(0, weight=1)
         self.controller.input_file_check = False

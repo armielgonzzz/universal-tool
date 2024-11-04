@@ -10,3 +10,4 @@ dist
 output
 data
 *.url
+*.ipynb
