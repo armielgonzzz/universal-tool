@@ -324,22 +324,22 @@ def tag_multi_result(df: pd.DataFrame) -> pd.DataFrame:
 
     # Tagging of multi result or new deals
     df['Note (if any)'] = df.apply(
-            lambda row: 'Multiple Result' if 'Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str) else 'New Deal',
+            lambda row: 'Multiple Result' if (pd.notna(row['Person - Mailing Address'])) and ('Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str)) else 'New Deal',
             axis=1
         )
     
     # No name tags
     df['Deal - Title'] = df.apply(
-            lambda row: f"No Name {row['Phone']}" if 'Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str) else row['Deal - Title'],
+            lambda row: f"No Name {row['Phone']}" if (pd.notna(row['Person - Mailing Address'])) and ('Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str)) else row['Deal - Title'],
             axis=1
         )
     df['Person - Name'] = df.apply(
-            lambda row: f"No Name {row['Phone']}" if 'Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str) else row['Person - Name'],
+            lambda row: f"No Name {row['Phone']}" if (pd.notna(row['Person - Mailing Address'])) and ('Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str)) else row['Person - Name'],
             axis=1
         )
     
     df['Deal - Deal Summary'] = df.apply(
-            lambda row: f'Common Name Error' if 'Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str) else row['Deal - Deal Summary'],
+            lambda row: f'Common Name Error' if (pd.notna(row['Person - Mailing Address'])) and ('Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str)) else row['Deal - Deal Summary'],
             axis=1
         )
     
@@ -351,7 +351,7 @@ def tag_multi_result(df: pd.DataFrame) -> pd.DataFrame:
 
     # Apply the condition
     df[columns_to_clear] = df.apply(
-        lambda row: [''] * len(columns_to_clear) if 'Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str) else row[columns_to_clear],
+        lambda row: [''] * len(columns_to_clear) if (pd.notna(row['Person - Mailing Address'])) and ('Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str)) else row[columns_to_clear],
         axis=1
     )
 

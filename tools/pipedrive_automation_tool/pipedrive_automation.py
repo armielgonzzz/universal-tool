@@ -144,7 +144,15 @@ def get_phone_number(
         for phone_index, phone in enumerate(result, start=1):
             df.loc[i, f'Person - Phone {phone_index}'] = phone
 
-    
+def get_email_address(
+        database_id: str,
+        df: pd.DataFrame,
+        cursor,
+        row,
+        i
+    ) -> None:
+
+    pass
 
 def split_id(id):
     return ", ".join(id.split(" | "))
@@ -169,6 +177,7 @@ def main(files: tuple, save_path: str):
                 get_serials(database_id, df, cursor, row, i)
                 get_mailing_address(database_id, df, cursor, row, i)
                 get_phone_number(database_id, df, cursor, row, i)
+                get_email_address(database_id, df, cursor, row, i)
 
         print("Successfully Processed All Files")
         df.to_csv('test_output.csv', index=False)

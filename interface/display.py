@@ -381,7 +381,6 @@ class App(ctk.CTk):
         center_new_window(self, tool_result_window)
         tool_result_window.resizable(False, False)
         tool_result_window.geometry("400x200")
-        tool_result_window.protocol("WM_DELETE_WINDOW", lambda: None)
         tool_result_window.grid_rowconfigure(0, weight=1)
         tool_result_window.grid_columnconfigure(0, weight=1)
         tool_result_window.attributes('-topmost', True)
