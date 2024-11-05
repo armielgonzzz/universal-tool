@@ -22,15 +22,15 @@ def search_phone_number(df: pd.DataFrame,
     pipedrive_df['phone_number'] = pipedrive_df['phone_number'].str.split(',')
     pipedrive_df['phone_number'] = pipedrive_df['phone_number'].apply(lambda x: sorted(set(x), key=x.index))
     df_exploded = pipedrive_df.explode('phone_number').reset_index(drop=True)
-    deal_ids = df_exploded.groupby('phone_number')['Deal - ID']\
-        .agg(lambda x: " | ".join(map(str, pd.unique(x))))
-    df_exploded['all_deal_id'] = df_exploded['phone_number'].map(deal_ids)
+    # deal_ids = df_exploded.groupby('phone_number')['Deal - ID']\
+    #     .agg(lambda x: " | ".join(map(str, pd.unique(x))))
+    # df_exploded['all_deal_id'] = df_exploded['phone_number'].map(deal_ids)
 
     merged_df = df.merge(df_exploded,
                          left_on='Phone',
                          right_on='phone_number',
                          how='left')
-    fu_df = merged_df[merged_df['all_deal_id'].notna()][['Note', 'Activity - Subject', 'Activity - Due date', 'all_deal_id']]
+    fu_df = merged_df[merged_df['Deal - ID'].notna()][['Note', 'Activity - Subject', 'Activity - Due date', 'Deal - ID']]
     no_deals_df = merged_df[merged_df['Deal - ID'].isna()].drop(columns=['phone_number'], axis=1)
 
     return fu_df, no_deals_df, df_exploded
@@ -66,12 +66,12 @@ def get_cm_db_deals(no_deals_df: pd.DataFrame,
                                                     left_on='deal_id',
                                                     right_on='Deal - ID',
                                                     how='left')
-    merge_pd_deal_id_df['all_deal_id'] = merge_pd_deal_id_df.groupby('Phone')['deal_id'].transform(
-        lambda x: " | ".join(x.astype(str).unique()) if x.nunique() > 1 else str(x.iloc[0])
-    )
-    merge_pd_deal_id_df.drop(columns=['id', 'deal_id'], axis=1, inplace=True)
-    merge_pd_deal_id_df.rename(columns={'Deal - ID': 'Deal ID'}, inplace=True)
-    cm_deals_final_df = merge_pd_deal_id_df[['Note', 'Activity - Subject', 'Activity - Due date', 'all_deal_id']]
+    # merge_pd_deal_id_df['all_deal_id'] = merge_pd_deal_id_df.groupby('Phone')['deal_id'].transform(
+    #     lambda x: " | ".join(x.astype(str).unique()) if x.nunique() > 1 else str(x.iloc[0])
+    # )
+    merge_pd_deal_id_df.drop(columns=['id'], axis=1, inplace=True)
+    merge_pd_deal_id_df.rename(columns={'deal_id': 'Deal - ID'}, inplace=True)
+    cm_deals_final_df = merge_pd_deal_id_df[['Note', 'Activity - Subject', 'Activity - Due date', 'Deal - ID']]
 
     return cm_deals_final_df, no_deal_id_final, cm_db_not_exist
 
@@ -88,8 +88,8 @@ def export_fu(fu_df: pd.DataFrame,
         'Note': 'Activity note',
         'Activity - Subject': 'Subject',
         'Activity - Due date': 'Due date',
-        'all_deal_id': 'Deal ID'})
-    drop_dupes_df = rename_df.drop_duplicates(subset=['Activity note', 'Due date'])
+        'Deal - ID': 'Deal ID'})
+    drop_dupes_df = rename_df.drop_duplicates(subset=['Activity note', 'Deal ID'])
     drop_dupes_df[[
         'Activity note',
         'Assigned to user',

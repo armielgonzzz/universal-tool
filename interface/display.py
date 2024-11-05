@@ -5,6 +5,7 @@ import webbrowser
 from customtkinter import filedialog
 from tools.text_inactive_tool.text_inactive import main as run_text_inactive
 from tools.phone_cleanup_tool.clean_up import main as run_clean_up
+from tools.pipedrive_automation_tool.pipedrive_automation import main as run_automation
 
 # Outside function that will center a new pop up window relative to the main window
 def center_new_window(main_window: ctk.CTkFrame,
@@ -122,6 +123,14 @@ class App(ctk.CTk):
         self.text_inactive_button.grid(row=2, column=0, padx=10, pady=5, sticky='nsew')
         self.text_inactive_button.bind("<Button-1>", lambda event: self.track_button_click(2))
 
+        self.pipedrive_automation_button = ctk.CTkButton(self.tool_options_frame,
+                                                     text='Pipedrive Automation Tool',
+                                                     command=lambda:self.show_frame(PipedriveAutomation),
+                                                     fg_color='#5b5c5c',
+                                                     hover_color='#424343')
+        self.pipedrive_automation_button.grid(row=3, column=0, padx=10, pady=5, sticky='nsew')
+        self.pipedrive_automation_button.bind("<Button-1>", lambda event: self.track_button_click(3))
+
         self.clicked_button_id = ctk.IntVar()
         self.current_frame = None
         self.input_file_check, self.save_path_check = False, False
@@ -176,7 +185,11 @@ class App(ctk.CTk):
                 "Proper row value and format in columns Deal - Title,\nDeal - Deal Summary, Person - Name and Note (if any)",
                 "Person - Phone, Person - Phone 1 not blank",
                 "Importing of output files to Pipedrive is successful"
-                ]
+                ],
+            
+            3: [
+                "Checklist to be added"
+            ]
         }
         checkbox_labels = output_checklist_dict[self.clicked_button_id.get()]
 
@@ -239,7 +252,7 @@ class App(ctk.CTk):
         label = ctk.CTkLabel(self.current_frame,
                              text="Phone Number Clean Up Tool",
                              font=ctk.CTkFont(
-                                 size=36,
+                                 size=30,
                                  weight='bold'
                              ))
         label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
@@ -420,20 +433,17 @@ class InitialFrame(ctk.CTkFrame):
 class TextInactive(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
-        self.controller = controller
 
+        self.controller = controller
         self.controller.input_file_check = False
         self.controller.save_path_check = False
-
         self.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
         self.grid_columnconfigure(0, weight=1)
-        self.controller.input_file_check = False
-        self.controller.save_path_check = False
 
         label = ctk.CTkLabel(self,
                              text="Text Inactive Tool",
                              font=ctk.CTkFont(
-                                 size=36,
+                                 size=30,
                                  weight='bold'
                              ))
         label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
@@ -450,6 +460,40 @@ class TextInactive(ctk.CTkFrame):
                                                 text='Save output files to',
                                                 command=lambda: self.controller.select_save_directory(frame=self,
                                                                                                       func=run_text_inactive),
+                                                fg_color='#5b5c5c',
+                                                hover_color='#424343')
+        define_save_path_button.grid(row=4, column=0, padx=10, pady=5)
+
+class PipedriveAutomation(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+
+        self.controller = controller
+        self.controller.input_file_check = False
+        self.controller.save_path_check = False
+        self.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
+        self.grid_columnconfigure(0, weight=1)
+
+        label = ctk.CTkLabel(self,
+                             text="Pipedrive Automation Tool",
+                             font=ctk.CTkFont(
+                                 size=30,
+                                 weight='bold'
+                             ))
+        label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+        
+        select_file_button = ctk.CTkButton(self,
+                                           text='Select files to process',
+                                           command=lambda: self.controller.open_select_file(frame=self,
+                                                                                            func=run_automation),
+                                           fg_color='#5b5c5c',
+                                           hover_color='#424343')
+        select_file_button.grid(row=1, column=0, padx=10, pady=5)
+
+        define_save_path_button = ctk.CTkButton(self,
+                                                text='Save output files to',
+                                                command=lambda: self.controller.select_save_directory(frame=self,
+                                                                                                      func=run_automation),
                                                 fg_color='#5b5c5c',
                                                 hover_color='#424343')
         define_save_path_button.grid(row=4, column=0, padx=10, pady=5)
