@@ -6,6 +6,7 @@ from .sql_queries import *
 from .get_pipedrive_data import main as update_pipedrive
 from .follow_up import process_fu
 from .new_deals import process_new_deals
+from urllib.parse import quote
 
 def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]':
 
@@ -15,7 +16,7 @@ def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Dat
         user = os.getenv('DB_USER')
         name = os.getenv('DB_NAME')
         password = os.getenv('DB_PASSWORD')
-        engine = create_engine(f'mysql+pymysql://{user}:{password}@{host}/{name}')
+        engine = create_engine(f'mysql+pymysql://{user}:{quote(password)}@{host}/{name}')
 
         print(f'Reading Community Minerals Database')
 
