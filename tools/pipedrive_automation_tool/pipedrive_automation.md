@@ -20,13 +20,13 @@ The **Pipedrive Automation Tool** streamlines the process of verifying the conta
     - `Phone Numbers`
     - `Full Mailing Address`
     - `Email Address`
-- After extracting these values from the database, tool will then update the values of the corresponding columns from the input file, effectively reducing the manual work of searching and updating the contact details of each of the deals from Pipedrive CRM.
+- After extracting these values from the database, tool will then update the values of the corresponding columns from the input file, effectively reducing the manual work of searching and updating the contact details of each of the deals from the input file.
 - Output file contains ***70 columns*** and here are some of the key columns to look for:  
     - `Deal - Serial Number` - deal's unique serial numbers separated by `|`
-    - `Person - Timezone` - corresponding time zone for the given phone number of the deal
-    - `Person - Mailing Address` - full mailing address of the deal owner
-    - `Person - Phone 1` - main phone number of the deal owner
-    - `Person - Email 1` - main email address of the deal owner
+    - `Person - Timezone` - corresponding time zone derived from the given phone number of the contact
+    - `Person - Mailing Address` - full mailing address of the contact
+    - `Person - Phone 1` - main phone number of the contact
+    - `Person - Email 1` - main email address of the contact
 
 ---
 

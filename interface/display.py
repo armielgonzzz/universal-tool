@@ -174,7 +174,7 @@ class App(ctk.CTk):
                  "No Duplicates in phone_number column",
                  "Correctness of tagging per lead from\ncolumn reason_for_removal",
                  "If tagged 'in_pipedrive is Y', verify if value in column\nin_pipedrive is Y from input file",
-                 "If tagged 'rc_pd is Yes', verify if value in column\n in_pipedrive is Yes from input file",
+                 "If tagged 'rc_pd is Yes', verify if value in column\n rc_pd is Yes from input file",
                  "If tagged 'Both type & carrier_type are Landline', verify\nif both columns type & carrier_type are Landline from input file",
                  "If tagged 'text_opt_in is No', verify if column text_opt_in\nis No from input file",
                  "If tagged 'contact_deal_id Not Empty', verify if column\ncontact_deal_id is empty from input file",
