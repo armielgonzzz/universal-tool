@@ -156,7 +156,7 @@ class App(ctk.CTk):
         checklist_window = ctk.CTkToplevel()
         center_new_window(self, checklist_window)
         checklist_window.resizable(False, False)
-        checklist_window.geometry("400x400")
+        checklist_window.geometry("470x400")
         checklist_window.grid_columnconfigure(0, weight=1)
         checklist_window.grid_rowconfigure(0, weight=1)
         checklist_window.attributes('-topmost', True)
@@ -173,11 +173,27 @@ class App(ctk.CTk):
             1 : ["Correct output column names",
                  "No Duplicates in phone_number column",
                  "Correctness of tagging per lead from\ncolumn reason_for_removal",
+                 "If tagged 'in_pipedrive is Y', verify if value in column\nin_pipedrive is Y from input file",
+                 "If tagged 'rc_pd is Yes', verify if value in column\n in_pipedrive is Yes from input file",
+                 "If tagged 'Both type & carrier_type are Landline', verify\nif both columns type & carrier_type are Landline from input file",
+                 "If tagged 'text_opt_in is No', verify if column text_opt_in\nis No from input file",
+                 "If tagged 'contact_deal_id Not Empty', verify if column\ncontact_deal_id is empty from input file",
+                 "If tagged 'contact_deal_status Not Empty', verify if column\ncontact_deal_status is empty from input file",
+                 "If tagged 'contact_person_id Not Empty', verify if column\ncontact_person_id is empty from input file",
+                 "If tagged 'phone_number_deal_id Not Empty', verify if column\nphone_number_deal_id is empty from input file",
+                 "If tagged 'phone_number_deal_status Not Empty', verify if\ncolumn phone_number_deal_status is empty from input file",
+                 "If tagged 'RVM - Last RVM Date - last 7 days from tool run\ndate', verify if the date from column RVM - Last RVM Date is\n7 days ago from today from input file",
+                 "If tagged 'Latest Text Marketing Date (Sent) - last 7 days\nfrom tool run date', verify if the date from column Latest\nText Marketing Date (Sent) is 7 days ago from today from input file",
+                 "If tagged 'Rolling 30 Days Rvm Count and Rolling 30 Days\nText Marketing Count - total >= 3', verify if the total count\nof columns Rolling 30 Days Rvm Count and Rolling 30 Days Text\nMarketing Count is less than or equal to 3 from input file",
+                 "If tagged 'Deal - ID Not Empty', verify if column\nDeal - ID is empty from input file",
+                 "If tagged 'Deal - Text Opt-in is No', verify if column\nDeal - Text Opt-in is No from input file",
+                 "For leads with empty reason_for_removal values, verify\nif all of the previous column conditions are not satisfied",
                  'Multiple tagging for reason_for_removal\nwith separator of " , "',
                  "Output file name and format"
                  ],
             
-            2: ["Correct output column names",
+            2: [
+                "Correct output column names",
                 "Two output files if tool created new deals\n(FU and New Deals)",
                 "No blank values for column Deal ID in FU file",
                 'Multiple Deal IDs in FU file with separator of " | "',
@@ -188,8 +204,13 @@ class App(ctk.CTk):
                 ],
             
             3: [
-                "Checklist to be added"
-            ]
+                "Correct output column names",
+                "No duplicate values from column Deal - ID",
+                "Only unique serial numbers from column Deal - Serial Number",
+                "Deal - Deal Summary value should be 'Completed'",
+                "Proper formatting of values from column\nPerson - Mailing Address (should have '..., USA' at the end)",
+                "For non-empty values from columns 'Person - Email' and\n'Person - Phone', verify if the same values are reflected for\ncolumns 'Person - Email 1' and 'Person - Phone 1' respectively"
+                ]
         }
         checkbox_labels = output_checklist_dict[self.clicked_button_id.get()]
 
