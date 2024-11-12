@@ -59,7 +59,7 @@ def get_serials(
 
     # Collect serial numbers from the query
     if result[0]:
-        unique_serials = set(result[0].split(" | "))
+        unique_serials = set(str(result[0]).split(" | "))
     else:
         unique_serials = set()
 
@@ -217,7 +217,7 @@ def add_constants(df: pd.DataFrame) -> None:
                      'Deal - Stage'], axis=1, inplace=True)
 
 def split_id(id):
-    return ", ".join(id.split(" | "))
+    return ", ".join(str(id).split(" | "))
 
 def export_file(df: pd.DataFrame, save_path: str, file: str):
 
