@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import pymysql
+import warnings
 from dotenv import load_dotenv
 from tqdm import tqdm
 
@@ -41,7 +42,6 @@ def get_serials(
 
     serials_query = f"""
     SELECT
-        c.deal_id,
         GROUP_CONCAT(DISTINCT s.serial_number SEPARATOR ' | ') AS serial_numbers
     FROM
         contact_serial_numbers s
@@ -50,10 +50,7 @@ def get_serials(
     WHERE 1=1
         AND s.contact_id IN ({database_id})
         AND s.serial_number NOT LIKE '%MUS%'
-        AND s.serial_number NOT LIKE '%CMS%'
-        AND c.deal_id IS NOT NULL
-    GROUP BY
-        c.deal_id;
+        AND s.serial_number NOT LIKE '%CMS%';
     """
 
     # Execute query and fetch result
@@ -61,8 +58,8 @@ def get_serials(
     result = cursor.fetchone()
 
     # Collect serial numbers from the query
-    if result and result[1]:
-        unique_serials = set(result[1].split(" | "))
+    if result[0]:
+        unique_serials = set(result[0].split(" | "))
     else:
         unique_serials = set()
 
@@ -235,6 +232,7 @@ def main(files: tuple, save_path: str):
 
     try:
         load_dotenv(dotenv_path='./misc/.env')
+        warnings.filterwarnings("ignore", category=FutureWarning)
 
         for file in files:
             print(f"Processing {os.path.basename(file)}")
@@ -243,6 +241,8 @@ def main(files: tuple, save_path: str):
             df['new_id'] = df['Deal - Unique Database ID'].apply(split_id)
             df['new_serials'] = ''
             df['Notes'] = ''
+            df['Person - Email'] = ''
+            df['Person - Phone'] = ''
             connection = connect_to_db()
 
             with connection.cursor() as cursor:
