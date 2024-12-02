@@ -64,7 +64,7 @@ Each tool below is included in the Lead Management Tools app. Click the links fo
 
 - [Pipedrive Automation Tool](./tools/pipedrive_automation_tool/pipedrive_automation.md) - Streamlines the process of verifying and updating the contact details of each deals from Pipedrive CRM.
 
-- [AutoDialer Cleanup TOol](./tools/autodialer_cleanup_tool/autodialer.md) - Automates the process of cleaning up the phone list for AutoDialer based on a pre-defined list cleaner file.
+- [AutoDialer Cleanup Tool](./tools/autodialer_cleanup_tool/autodialer.md) - Automates the process of cleaning up the phone list for AutoDialer based on a pre-defined list cleaner file.
 
 Each of these tools operates independently, allowing you to use the necessary functionality without requiring access to all tools simultaneously.
 
