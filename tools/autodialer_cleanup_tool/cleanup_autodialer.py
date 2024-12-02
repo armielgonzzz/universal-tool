@@ -36,9 +36,18 @@ def main(cleanup_files: tuple, list_files: tuple, save_path: str):
             print("Preparing List Cleaner")
 
             list_cleaner_df = pd.read_excel(to_clean_file,
-                                            sheet_name=[0,1,2],
+                                            sheet_name=['ContMgt+MVP+JC+PD+RC',
+                                                        'DNC',
+                                                        'SMS-Sent',
+                                                        'Outbound-2weeks',
+                                                        'FromOtherList'],
                                             header=None)
-            final_list_cleaner_df = pd.concat([list_cleaner_df[0], list_cleaner_df[1], list_cleaner_df[2]])
+            
+            final_list_cleaner_df = pd.concat([list_cleaner_df['ContMgt+MVP+JC+PD+RC'],
+                                               list_cleaner_df['DNC'],
+                                               list_cleaner_df['SMS-Sent'],
+                                               list_cleaner_df['Outbound-2weeks'],
+                                               list_cleaner_df['FromOtherList']])
 
             # Clean up the list and filter for valid phone numbers
             valid_phone_set = set(int(phone) for phone in map(str, final_list_cleaner_df[0].tolist()) if is_valid_phone(phone))
