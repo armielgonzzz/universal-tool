@@ -10,6 +10,9 @@ def export_output(df: pd.DataFrame, file_path: str, save_path: str) -> None:
     
     elif filename.endswith('.xlsx'):
         df.to_excel(f"{save_path}/(Clean file) {filename}", index=False)
+
+    elif filename.endswith('.xlsb'):
+        df.to_excel(f"{save_path}/(Clean file) {filename.split('.')[0]}.xlsx", index=False)
     
     else:
         print("No output generated. Invalid file format")
@@ -22,35 +25,37 @@ def read_file(path: str):
     elif path.endswith('.xlsx'):
         return pd.read_excel(path)
     
+    elif path.endswith('.xlsb'):
+        return pd.read_excel(path, engine='pyxlsb', sheet_name=['List'])['List']
+    
     else:
-        raise ValueError("Invalid file format: Please provide a .csv or .xlsx file.")
+        raise ValueError("Invalid file format: Please provide a .csv, .xlsx or .xlsb file.")
     
 def is_valid_phone(phone):
     return bool(re.fullmatch(r'\d{10,15}', phone))
 
-def main(cleanup_files: tuple, list_files: tuple, save_path: str):
+def main(cleaner_file: tuple, list_files: tuple, save_path: str):
 
     try:
-        for to_clean_file in cleanup_files:
+        
+        print("Preparing List Cleaner")
+        
+        list_cleaner_df = pd.read_excel(cleaner_file,
+                                        sheet_name=['ContMgt+MVP+JC+PD+RC',
+                                                    'DNC',
+                                                    'SMS-Sent',
+                                                    'Outbound-2weeks',
+                                                    'FromOtherList'],
+                                        header=None)
+        
+        final_list_cleaner_df = pd.concat([list_cleaner_df['ContMgt+MVP+JC+PD+RC'],
+                                            list_cleaner_df['DNC'],
+                                            list_cleaner_df['SMS-Sent'],
+                                            list_cleaner_df['Outbound-2weeks'],
+                                            list_cleaner_df['FromOtherList']])
 
-            print("Preparing List Cleaner")
-
-            list_cleaner_df = pd.read_excel(to_clean_file,
-                                            sheet_name=['ContMgt+MVP+JC+PD+RC',
-                                                        'DNC',
-                                                        'SMS-Sent',
-                                                        'Outbound-2weeks',
-                                                        'FromOtherList'],
-                                            header=None)
-            
-            final_list_cleaner_df = pd.concat([list_cleaner_df['ContMgt+MVP+JC+PD+RC'],
-                                               list_cleaner_df['DNC'],
-                                               list_cleaner_df['SMS-Sent'],
-                                               list_cleaner_df['Outbound-2weeks'],
-                                               list_cleaner_df['FromOtherList']])
-
-            # Clean up the list and filter for valid phone numbers
-            valid_phone_set = set(int(phone) for phone in map(str, final_list_cleaner_df[0].tolist()) if is_valid_phone(phone))
+        # Clean up the list and filter for valid phone numbers
+        valid_phone_set = set(int(phone) for phone in map(str, final_list_cleaner_df[0].tolist()) if is_valid_phone(phone))
         
         for list_file in list_files:
 

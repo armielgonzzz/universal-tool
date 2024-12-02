@@ -577,11 +577,11 @@ class AutoDialerCleaner(ctk.CTkFrame):
     
     def select_cleaner_file(self, window):
 
-        self.cleaner_file = filedialog.askopenfilenames(title="Select list cleaner file",
+        self.cleaner_file = filedialog.askopenfilename(title="Select list cleaner file",
                                                         filetypes=[("All Files", "*.*")])
         if self.cleaner_file:
             cleaner_file_label = ctk.CTkLabel(window,
-                                              text=f"{os.path.basename(self.cleaner_file[0])}",
+                                              text=f"{os.path.basename(self.cleaner_file)}",
                                               fg_color="transparent")
             cleaner_file_label.grid(row=2, column=0, padx=5, pady=5)
             self.check_run()
