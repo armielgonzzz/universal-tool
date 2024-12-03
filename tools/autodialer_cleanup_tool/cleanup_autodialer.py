@@ -1,6 +1,9 @@
 import os
 import re
 import pandas as pd
+import warnings
+
+warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
 
 def export_output(df: pd.DataFrame, file_path: str, save_path: str) -> None:
 
@@ -33,6 +36,37 @@ def read_file(path: str):
     
 def is_valid_phone(phone):
     return bool(re.fullmatch(r'\d{10,15}', phone))
+
+def remove_phone_dupes(df: pd.DataFrame) -> pd.DataFrame:
+
+    df['original_index'] = df.index
+    phone_columns = ['phone1', 'phone2', 'phone3', 'phone4', 'phone5']
+    sorted_df = df.sort_values(by=phone_columns, ascending=False)
+
+    for phone in phone_columns:
+        sorted_df.loc[(sorted_df[phone].notna()) & (sorted_df[phone].duplicated(keep='last')), phone] = pd.NA
+    
+    phone_filter_mask = (sorted_df['phone5'].isin(sorted_df['phone2'])) \
+    | (sorted_df['phone5'].isin(sorted_df['phone3'])) \
+    | (sorted_df['phone5'].isin(sorted_df['phone4'])) \
+    | (sorted_df['phone5'].isin(sorted_df['phone1']))
+    sorted_df.loc[(sorted_df['phone5'].notna()) & (phone_filter_mask), 'phone5'] = pd.NA
+
+    phone_filter_mask = (sorted_df['phone4'].isin(sorted_df['phone3'])) \
+    | (sorted_df['phone4'].isin(sorted_df['phone2'])) \
+    | (sorted_df['phone4'].isin(sorted_df['phone1']))
+    sorted_df.loc[(sorted_df['phone4'].notna()) & (phone_filter_mask), 'phone4'] = pd.NA
+
+    phone_filter_mask = (sorted_df['phone3'].isin(sorted_df['phone2'])) \
+    | (sorted_df['phone3'].isin(sorted_df['phone1']))
+    sorted_df.loc[(sorted_df['phone3'].notna()) & (phone_filter_mask), 'phone3'] = pd.NA
+
+    phone_filter_mask = (sorted_df['phone2'].isin(sorted_df['phone1']))
+    sorted_df.loc[(sorted_df['phone2'].notna()) & (phone_filter_mask), 'phone2'] = pd.NA
+            
+    sorted_df = sorted_df.sort_values(by='original_index')
+    sorted_df = sorted_df.drop(columns='original_index')
+    return sorted_df
 
 def main(cleaner_file: tuple, list_files: tuple, save_path: str):
 
@@ -72,8 +106,10 @@ def main(cleaner_file: tuple, list_files: tuple, save_path: str):
             # Search phones in cleaner file
             output_df = list_df[~list_df[['phone1', 'phone2', 'phone3', 'phone4', 'phone5']].isin(valid_phone_set).any(axis=1)]
 
+            removed_dupes_df = remove_phone_dupes(output_df)
+
             # Export to save path
-            export_output(output_df, list_file, save_path)
+            export_output(removed_dupes_df, list_file, save_path)
         
         print("Sucessfully processed all files")
 
