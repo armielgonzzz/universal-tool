@@ -2,11 +2,14 @@ import os
 import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
-from .sql_queries import *
-from .get_pipedrive_data import main as update_pipedrive
-from .follow_up import process_fu
-# from .new_deals import process_new_deals
+from sql_queries import *
+from get_pipedrive_data import main as update_pipedrive
+from follow_up import process_fu
+from new_deals import process_new_deals
 from urllib.parse import quote
+import warnings
+
+warnings.filterwarnings("ignore", category=pd.errors.SettingWithCopyWarning)
 
 def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]':
 
@@ -55,7 +58,7 @@ def main(files: tuple, save_path: str):
     try:
         load_dotenv(dotenv_path='misc/.env')
         phone_number_df, email_address_df, serial_numbers_df, cm_db_df = read_cm_live_db()
-        update_pipedrive()
+        # update_pipedrive()
         pipedrive_df = read_file('./data/pipedrive/pipedrive_data.csv')
 
         for i, file in enumerate(files, start=1):
@@ -69,13 +72,13 @@ def main(files: tuple, save_path: str):
                                                            cm_db_df,
                                                            save_path,
                                                            i)
-            # process_new_deals(no_deal_id_final,
-            #                 cm_db_not_exist,
-            #                 email_address_df,
-            #                 serial_numbers_df,
-            #                 cm_db_df,
-            #                 save_path,
-            #                 i)
+            process_new_deals(no_deal_id_final,
+                            cm_db_not_exist,
+                            email_address_df,
+                            serial_numbers_df,
+                            cm_db_df,
+                            save_path,
+                            i)
 
         print("Successfully Processed All Files")
 
@@ -85,4 +88,4 @@ def main(files: tuple, save_path: str):
 
 
 if __name__ == "__main__":
-    main()
+    main(('C:/Users/armie/work/cm_tools/universal_tool/tools/missing_deals_tool/input inactive.xlsx',), '.')

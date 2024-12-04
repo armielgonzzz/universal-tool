@@ -68,28 +68,57 @@ def remove_phone_dupes(df: pd.DataFrame) -> pd.DataFrame:
     sorted_df = sorted_df.drop(columns='original_index')
     return sorted_df
 
-def main(cleaner_file: tuple, list_files: tuple, save_path: str):
+def clean_contact_id_deal_id(df: pd.DataFrame, id_set: set) -> pd.DataFrame:
+
+    if 'contact_id' in df.columns:
+        df['contact_id'] = df['contact_id'].apply(pd.to_numeric, errors='coerce').astype('Int64')
+        df = df[~df['contact_id'].isin(id_set)]
+    
+    if 'Deal ID' in df.columns:
+        df = df[df['Deal ID'].isna()]
+
+    final_df = df[~df[['phone1', 'phone2', 'phone3', 'phone4', 'phone5']].isna().all(axis=1)]
+
+    return final_df
+
+def get_phone_set(cleaner_file: str) -> set:
+
+    list_cleaner_df = pd.read_excel(cleaner_file,
+                                    sheet_name=['ContMgt+MVP+JC+PD+RC',
+                                                'DNC',
+                                                'SMS-Sent',
+                                                'Outbound-2weeks',
+                                                'FromOtherList'],
+                                    header=None)
+    
+    final_list_cleaner_df = pd.concat([list_cleaner_df['ContMgt+MVP+JC+PD+RC'],
+                                        list_cleaner_df['DNC'],
+                                        list_cleaner_df['SMS-Sent'],
+                                        list_cleaner_df['Outbound-2weeks'],
+                                        list_cleaner_df['FromOtherList']])
+
+    # Clean up the list and filter for valid phone numbers
+    valid_phone_set = set(int(phone) for phone in map(str, final_list_cleaner_df[0].tolist()) if is_valid_phone(phone))
+    return valid_phone_set
+
+def get_id_set(cleaner_file: str) -> set:
+
+    unique_db_df_list = pd.read_excel(cleaner_file,
+                                      sheet_name=['UniqueDB ID'])
+    unique_db_df = unique_db_df_list['UniqueDB ID']
+    valid_numbers = pd.to_numeric(unique_db_df['Deal - Unique Database ID'], errors='coerce')
+    valid_numbers = valid_numbers.dropna().astype(int)
+    valid_id_set = set(valid_numbers)
+    return valid_id_set
+
+def main(cleaner_file: str, list_files: tuple, save_path: str):
 
     try:
         
         print("Preparing List Cleaner")
-        
-        list_cleaner_df = pd.read_excel(cleaner_file,
-                                        sheet_name=['ContMgt+MVP+JC+PD+RC',
-                                                    'DNC',
-                                                    'SMS-Sent',
-                                                    'Outbound-2weeks',
-                                                    'FromOtherList'],
-                                        header=None)
-        
-        final_list_cleaner_df = pd.concat([list_cleaner_df['ContMgt+MVP+JC+PD+RC'],
-                                            list_cleaner_df['DNC'],
-                                            list_cleaner_df['SMS-Sent'],
-                                            list_cleaner_df['Outbound-2weeks'],
-                                            list_cleaner_df['FromOtherList']])
 
-        # Clean up the list and filter for valid phone numbers
-        valid_phone_set = set(int(phone) for phone in map(str, final_list_cleaner_df[0].tolist()) if is_valid_phone(phone))
+        valid_phone_set = get_phone_set(cleaner_file)
+        valid_id_set = get_id_set(cleaner_file)
         
         for list_file in list_files:
 
@@ -107,9 +136,10 @@ def main(cleaner_file: tuple, list_files: tuple, save_path: str):
             output_df = list_df[~list_df[['phone1', 'phone2', 'phone3', 'phone4', 'phone5']].isin(valid_phone_set).any(axis=1)]
 
             removed_dupes_df = remove_phone_dupes(output_df)
+            final_df = clean_contact_id_deal_id(removed_dupes_df, valid_id_set)
 
             # Export to save path
-            export_output(removed_dupes_df, list_file, save_path)
+            export_output(final_df, list_file, save_path)
         
         print("Sucessfully processed all files")
 
