@@ -68,6 +68,7 @@ def export_fu(fu_df: pd.DataFrame,
         lambda x: f"Text from {x['From']} to {x['To']}",
         axis=1
     )
+    fu_final_df['Due date'] = fu_final_df['Deal Created Date']
     rename_df = fu_final_df.rename(columns={
         'Text': 'Activity note',
         'Deal Created Date': 'Activity creation date',
@@ -79,7 +80,7 @@ def export_fu(fu_df: pd.DataFrame,
         'Done',
         'Subject',
         'Type',
-        'Activity creation date',
+        'Due date',
         'Deal ID'
     ]].to_excel(f'{save_path}/{i}. FU - Missing Deals Text.xlsx', index=False)
 

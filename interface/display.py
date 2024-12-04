@@ -7,6 +7,7 @@ from tools.text_inactive_tool.text_inactive import main as run_text_inactive
 from tools.phone_cleanup_tool.clean_up import main as run_clean_up
 from tools.pipedrive_automation_tool.pipedrive_automation import main as run_automation
 from tools.autodialer_cleanup_tool.cleanup_autodialer import main as run_autodialer
+from tools.missing_deals_tool.missing_deals import main as run_missing_deals
 
 # Outside function that will center a new pop up window relative to the main window
 def center_new_window(main_window: ctk.CTkFrame,
@@ -140,6 +141,14 @@ class App(ctk.CTk):
         self.autodialer_button.grid(row=4, column=0, padx=10, pady=5, sticky='nsew')
         self.autodialer_button.bind("<Button-1>", lambda event: self.track_button_click(4))
 
+        self.missing_deals_button = ctk.CTkButton(self.tool_options_frame,
+                                                     text='Missing Deals Text Tool',
+                                                     command=lambda:self.show_frame(MissingDealsText),
+                                                     fg_color='#5b5c5c',
+                                                     hover_color='#424343')
+        self.missing_deals_button.grid(row=5, column=0, padx=10, pady=5, sticky='nsew')
+        self.missing_deals_button.bind("<Button-1>", lambda event: self.track_button_click(5))
+
         self.clicked_button_id = ctk.IntVar()
         self.current_frame = None
         self.input_file_check, self.save_path_check = False, False
@@ -223,6 +232,10 @@ class App(ctk.CTk):
             
             4: [
                 "AutoDialer List"
+               ],
+
+            5: [
+                "Missing Deals Text List"
                ]
         }
         checkbox_labels = output_checklist_dict[self.clicked_button_id.get()]
@@ -630,6 +643,40 @@ class AutoDialerCleaner(ctk.CTkFrame):
                                                                                         self.files_to_clean,
                                                                                         self.save_path))
             run_tool_button.grid(row=7, column=0, padx=10, pady=5)
+
+class MissingDealsText(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+
+        self.controller = controller
+        self.controller.input_file_check = False
+        self.controller.save_path_check = False
+        self.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
+        self.grid_columnconfigure(0, weight=1)
+
+        label = ctk.CTkLabel(self,
+                             text="Missing Deals Text Tool",
+                             font=ctk.CTkFont(
+                                 size=30,
+                                 weight='bold'
+                             ))
+        label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+        
+        select_file_button = ctk.CTkButton(self,
+                                           text='Select files to process',
+                                           command=lambda: self.controller.open_select_file(frame=self,
+                                                                                            func=run_missing_deals),
+                                           fg_color='#5b5c5c',
+                                           hover_color='#424343')
+        select_file_button.grid(row=1, column=0, padx=10, pady=5)
+
+        define_save_path_button = ctk.CTkButton(self,
+                                                text='Save output files to',
+                                                command=lambda: self.controller.select_save_directory(frame=self,
+                                                                                                      func=run_missing_deals),
+                                                fg_color='#5b5c5c',
+                                                hover_color='#424343')
+        define_save_path_button.grid(row=4, column=0, padx=10, pady=5)
 
 def main() -> None:
 

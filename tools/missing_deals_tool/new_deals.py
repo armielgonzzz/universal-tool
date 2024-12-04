@@ -86,8 +86,9 @@ def add_cm_db_details(cm_db_final_df: pd.DataFrame, cm_db_df: pd.DataFrame) -> p
     '''
 
     # Merge the rest of the column from CM Database to final dataframe
-    cm_db_df.rename(columns={'id': 'Deal - Unique Database ID'}, inplace=True)
-    cm_db_final_df = cm_db_final_df.merge(cm_db_df,
+    cm_db = cm_db_df.copy()
+    cm_db.rename(columns={'id': 'Deal - Unique Database ID'}, inplace=True)
+    cm_db_final_df = cm_db_final_df.merge(cm_db,
                                         on='Deal - Unique Database ID',
                                         how='left')
 
@@ -352,9 +353,17 @@ def tag_multi_result(df: pd.DataFrame) -> pd.DataFrame:
                         'Deal - Unique Database ID',
                         'Person - Mailing Address']
 
+    # # Apply the condition
+    # df[columns_to_clear] = df.apply(
+    #     lambda row: [''] * len(columns_to_clear) if (pd.notna(row['Person - Mailing Address'])) and ('Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str)) else row[columns_to_clear],
+    #     axis=1
+    # )
+
     # Apply the condition
     df[columns_to_clear] = df.apply(
-        lambda row: [''] * len(columns_to_clear) if (pd.notna(row['Person - Mailing Address'])) and ('Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str)) else row[columns_to_clear],
+        lambda row: pd.Series([''] * len(columns_to_clear), index=columns_to_clear) 
+        if (pd.notna(row['Person - Mailing Address'])) and ('Multiple' in row['Person - Mailing Address'] or isinstance(row['Deal - Unique Database ID'], str)) 
+        else row[columns_to_clear],
         axis=1
     )
 
