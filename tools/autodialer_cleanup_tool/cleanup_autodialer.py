@@ -2,8 +2,82 @@ import os
 import re
 import pandas as pd
 import warnings
+from sqlalchemy import create_engine
+from urllib.parse import quote
 
 warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
+
+disposition_query = """
+SELECT
+	dnis_to
+FROM
+	max_outbound_calls
+WHERE
+	primary_disposition IS NOT NULL AND
+    primary_disposition IN 
+	(
+		'Business/ Work number',
+		'Sold Interests',
+		'Incorrect contact / Wrong number',
+		'Do Not Call Again (remove from list)',
+		'Invalid Number',
+		'Proactive Identified - Answering Machine Left Message',
+		'Answering Machine Left Message'
+	)
+GROUP BY
+	dnis_to
+"""
+
+six_months_query = """
+WITH ranked_calls AS (
+    SELECT
+        dnis_to,
+        ROW_NUMBER() OVER (PARTITION BY dnis_to ORDER BY start_time DESC) AS date_rank
+    FROM
+        max_outbound_calls
+    WHERE
+        primary_disposition IN ('Lead Not interested', 'Uncooperative Lead')
+        AND start_time BETWEEN DATE_ADD(CURRENT_DATE, INTERVAL -6 MONTH) AND CURRENT_DATE
+)
+SELECT
+    dnis_to
+FROM
+    ranked_calls
+WHERE
+    date_rank = 1;
+"""
+
+def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]':
+
+    try:
+        # Create database engine
+        host = os.getenv('DB_HOST')
+        user = os.getenv('DB_USER')
+        name = os.getenv('DB_NAME')
+        password = os.getenv('DB_PASSWORD')
+        engine = create_engine(f'mysql+pymysql://{user}:{quote(password)}@{host}/{name}')
+
+        print(f'Reading Community Minerals Database')
+
+        disposition_df = pd.read_sql_query(disposition_query, engine)
+        six_months_df = pd.read_sql_query(six_months_query, engine)
+
+        disposition_df['dnis_to'] = pd.to_numeric(disposition_df['dnis_to'], errors='coerce')
+        disposition_df['dnis_to'] = disposition_df['dnis_to'].astype('Int64')
+        disposition_set = set(disposition_df.loc[disposition_df['dnis_to'].notna(), 'dnis_to'].map(int))
+
+        six_months_df['dnis_to'] = pd.to_numeric(six_months_df['dnis_to'], errors='coerce')
+        six_months_df['dnis_to'] = six_months_df['dnis_to'].astype('Int64')
+        months_set = set(six_months_df.loc[six_months_df['dnis_to'].notna(), 'dnis_to'].map(int))
+
+        return disposition_set, months_set
+
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while reading from the database: {e}")
+
+    finally:
+        engine.dispose()
+
 
 def export_output(df: pd.DataFrame, file_path: str, save_path: str) -> None:
 
@@ -119,6 +193,7 @@ def main(cleaner_file: str, list_files: tuple, save_path: str):
 
         valid_phone_set = get_phone_set(cleaner_file)
         valid_id_set = get_id_set(cleaner_file)
+        disposition_set, months_set = read_cm_live_db()
         
         for list_file in list_files:
 
@@ -126,17 +201,30 @@ def main(cleaner_file: str, list_files: tuple, save_path: str):
             list_df = read_file(list_file)
 
             # Convert phone numbers to int
-            list_df[['phone1', 'phone2', 'phone3', 'phone4', 'phone5']] = (
-                list_df[['phone1', 'phone2', 'phone3', 'phone4', 'phone5']]
+            phone_columns = ['phone1', 'phone2', 'phone3', 'phone4', 'phone5']
+            list_df[phone_columns] = (
+                list_df[phone_columns]
                 .apply(pd.to_numeric, errors='coerce')
                 .astype('Int64')
             )
 
             # Search phones in cleaner file
-            output_df = list_df[~list_df[['phone1', 'phone2', 'phone3', 'phone4', 'phone5']].isin(valid_phone_set).any(axis=1)]
+            output_df = list_df[~list_df[phone_columns].isin(valid_phone_set).any(axis=1)]
 
-            removed_dupes_df = remove_phone_dupes(output_df)
-            final_df = clean_contact_id_deal_id(removed_dupes_df, valid_id_set)
+            # Remove Company contact type
+            clean_contact_type_df = output_df[output_df['contact_type'].str.lower() != 'company']
+            
+            # Remove duplicates
+            removed_dupes_df = remove_phone_dupes(clean_contact_type_df)
+
+            # Clean df based on contact id and deal id
+            clean_contact_deal_df = clean_contact_id_deal_id(removed_dupes_df, valid_id_set)
+
+            # Check if has existing dispositions
+            clean_dispo_df = clean_contact_deal_df[~clean_contact_deal_df[phone_columns].isin(disposition_set).any(axis=1)]
+
+            # Check if within 6 months for specific dispositions
+            final_df = clean_dispo_df[~clean_dispo_df[phone_columns].isin(months_set).any(axis=1)]
 
             # Export to save path
             export_output(final_df, list_file, save_path)
