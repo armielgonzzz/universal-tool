@@ -212,10 +212,12 @@ def main(cleaner_file: str, list_files: tuple, save_path: str):
             output_df = list_df[~list_df[phone_columns].isin(valid_phone_set).any(axis=1)]
 
             # Remove Company contact type
-            clean_contact_type_df = output_df[output_df['contact_type'].str.lower() != 'company']
+            column_name = next((col for col in output_df.columns if col.strip().lower() == 'contact_type'), None)
+            if column_name:
+                output_df = output_df[output_df[column_name].str.lower() != 'company']
             
             # Remove duplicates
-            removed_dupes_df = remove_phone_dupes(clean_contact_type_df)
+            removed_dupes_df = remove_phone_dupes(output_df)
 
             # Clean df based on contact id and deal id
             clean_contact_deal_df = clean_contact_id_deal_id(removed_dupes_df, valid_id_set)
