@@ -1,15 +1,17 @@
 import os
 import pandas as pd
+import warnings
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
+from urllib.parse import quote
 from .sql_queries import *
 from .get_pipedrive_data import main as update_pipedrive
 from .follow_up import process_fu
 from .new_deals import process_new_deals
-from urllib.parse import quote
-import warnings
 
 warnings.filterwarnings("ignore", category=pd.errors.SettingWithCopyWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 
 def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]':
 
@@ -66,19 +68,22 @@ def main(files: tuple, save_path: str):
             print(f"Processing {os.path.basename(file)}")
 
             df = read_file(file)
+            output_type = 'Inactive' if 'Reason for Not Selling' in df.columns else 'Live'
             no_deal_id_final, cm_db_not_exist = process_fu(df,
                                                            pipedrive_df,
                                                            phone_number_df,
                                                            cm_db_df,
                                                            save_path,
-                                                           i)
+                                                           i,
+                                                           output_type)
             process_new_deals(no_deal_id_final,
                             cm_db_not_exist,
                             email_address_df,
                             serial_numbers_df,
                             cm_db_df,
                             save_path,
-                            i)
+                            i,
+                            output_type)
 
         print("Successfully Processed All Files")
 

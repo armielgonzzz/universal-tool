@@ -8,6 +8,7 @@ from tools.phone_cleanup_tool.clean_up import main as run_clean_up
 from tools.pipedrive_automation_tool.pipedrive_automation import main as run_automation
 from tools.autodialer_cleanup_tool.cleanup_autodialer import main as run_autodialer
 from tools.missing_deals_tool.missing_deals import main as run_missing_deals
+from tools.missing_deals_tool.lookup import main as run_missing_deals_lookup
 
 # Outside function that will center a new pop up window relative to the main window
 def center_new_window(main_window: ctk.CTkFrame,
@@ -651,8 +652,11 @@ class MissingDealsText(ctk.CTkFrame):
         self.controller = controller
         self.controller.input_file_check = False
         self.controller.save_path_check = False
+        self.files_to_process = False
+        self.save_path = False
         self.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
         self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure((5), weight=1)
 
         label = ctk.CTkLabel(self,
                              text="Missing Deals Text Tool",
@@ -664,19 +668,83 @@ class MissingDealsText(ctk.CTkFrame):
         
         select_file_button = ctk.CTkButton(self,
                                            text='Select files to process',
-                                           command=lambda: self.controller.open_select_file(frame=self,
-                                                                                            func=run_missing_deals),
+                                           command=lambda: self.select_files_to_clean(self),
                                            fg_color='#5b5c5c',
                                            hover_color='#424343')
         select_file_button.grid(row=1, column=0, padx=10, pady=5)
 
         define_save_path_button = ctk.CTkButton(self,
                                                 text='Save output files to',
-                                                command=lambda: self.controller.select_save_directory(frame=self,
-                                                                                                      func=run_missing_deals),
+                                                command=lambda: self.select_save_path(self),
                                                 fg_color='#5b5c5c',
                                                 hover_color='#424343')
-        define_save_path_button.grid(row=4, column=0, padx=10, pady=5)
+        define_save_path_button.grid(row=3, column=0, padx=10, pady=5)
+
+    def select_files_to_clean(self, window):
+
+        self.files_to_process = filedialog.askopenfilenames(title="Select files to clean",
+                                                          filetypes=[("All Files", "*.*")])
+        if self.files_to_process:
+            files_to_clean_frame = ctk.CTkScrollableFrame(window,
+                                                          height=80)
+            files_to_clean_frame.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
+            files_to_clean_frame.grid_columnconfigure(0, weight=1)
+
+            for i, file in enumerate(self.files_to_process):
+                file_name = os.path.basename(file)
+                selected_files_label = ctk.CTkLabel(files_to_clean_frame,
+                                                    text=file_name,
+                                                    wraplength=400)
+                selected_files_label.grid(row=i, column=0, padx=10, pady=3, sticky='nsew')       
+            self.check_run()         
+    
+    def select_save_path(self, window):
+        self.save_path = filedialog.askdirectory(title="Save directory")
+        if self.save_path:
+            save_path_label = ctk.CTkLabel(window,
+                                           text=f"{self.save_path}",
+                                           fg_color="transparent",
+                                           wraplength=400)
+            save_path_label.grid(row=4, column=0, padx=5, pady=5)
+            self.check_run()
+
+    
+    def check_run(self):
+        if self.files_to_process and self.save_path:
+            run_buttons_frame = ctk.CTkFrame(self,
+                                             fg_color='transparent')
+            run_buttons_frame.grid(row=5, column=0, padx=10, pady=5)
+            run_buttons_frame.grid_rowconfigure(0, weight=1)
+            run_buttons_frame.grid_columnconfigure((0,1), weight=1)
+
+            run_tool_button = ctk.CTkButton(run_buttons_frame,
+                                            text='RUN TOOL',
+                                            height=36,
+                                            width=240,
+                                            fg_color='#d99125',
+                                            hover_color='#ae741e',
+                                            text_color='#141414',
+                                            corner_radius=50,
+                                            font=ctk.CTkFont(size=18, weight='bold'),
+                                            command=lambda:self.controller.trigger_tool(run_missing_deals,
+                                                                                        self.files_to_process,
+                                                                                        self.save_path))
+            run_tool_button.grid(row=0, column=0, padx=10, pady=5)
+
+            run_tool_button = ctk.CTkButton(run_buttons_frame,
+                                            text='RUN LOOK UP',
+                                            height=36,
+                                            width=240,
+                                            # fg_color='#d99125',
+                                            # hover_color='#ae741e',
+                                            # text_color='#141414',
+                                            corner_radius=50,
+                                            font=ctk.CTkFont(size=18, weight='bold'),
+                                            command=lambda:self.controller.trigger_tool(run_missing_deals_lookup,
+                                                                                        self.files_to_process,
+                                                                                        self.save_path))
+            run_tool_button.grid(row=0, column=1, padx=10, pady=5)
+
 
 def main() -> None:
 

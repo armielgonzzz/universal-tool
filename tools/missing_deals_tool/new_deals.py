@@ -434,7 +434,8 @@ def process_new_deals(no_deal_id_final: pd.DataFrame,
                       serial_numbers_df: pd.DataFrame,
                       cm_db_df: pd.DataFrame,
                       save_path: str,
-                      i: int) -> None:
+                      i: int,
+                      output_type: str) -> None:
     
     if no_deal_id_final.empty and cm_db_not_exist.empty:
         return None
@@ -555,7 +556,7 @@ def process_new_deals(no_deal_id_final: pd.DataFrame,
 
     print("Creating New Deals")
 
-    new_deals_export_df.to_excel(f'{save_path}/{i}. New Deals - Missing Deals Text.xlsx', index=False)
+    new_deals_export_df.to_excel(f'{save_path}/{i}. ({output_type}) New Deals - Missing Deals Text.xlsx', index=False)
 
 if __name__ == "__main__":
     process_new_deals()

@@ -51,14 +51,15 @@ def get_cm_db_deals(no_deals_df: pd.DataFrame,
                                                     how='left')
     merge_pd_deal_id_df.drop(columns=['id'], axis=1, inplace=True)
     merge_pd_deal_id_df.rename(columns={'deal_id': 'Deal - ID'}, inplace=True)
-    cm_deals_final_df = merge_pd_deal_id_df[['To', 'Text', 'Deal Created Date', 'Deal - ID']]
+    cm_deals_final_df = merge_pd_deal_id_df[['From', 'To', 'Text', 'Deal Created Date', 'Deal - ID']]
 
     return cm_deals_final_df, no_deal_id_final, cm_db_not_exist
 
 def export_fu(fu_df: pd.DataFrame,
               cm_deals_final_df: pd.DataFrame,
               save_path: str,
-              i: int) -> None:
+              i: int,
+              output_type: str) -> None:
 
     fu_final_df = pd.concat([fu_df, cm_deals_final_df])
     fu_final_df['Assigned to user'] = 'Keena'
@@ -82,7 +83,7 @@ def export_fu(fu_df: pd.DataFrame,
         'Type',
         'Due date',
         'Deal ID'
-    ]].to_excel(f'{save_path}/{i}. FU - Missing Deals Text.xlsx', index=False)
+    ]].to_excel(f'{save_path}/{i}. ({output_type}) FU - Missing Deals Text.xlsx', index=False)
 
 
 def process_fu(df: pd.DataFrame,
@@ -90,7 +91,8 @@ def process_fu(df: pd.DataFrame,
                phone_number_df: pd.DataFrame,
                cm_db_df: pd.DataFrame,
                save_path: str,
-               i: int) -> pd.DataFrame:
+               i: int,
+               output_type: str) -> pd.DataFrame:
     
     print("Creating Follow up")
     
@@ -101,7 +103,7 @@ def process_fu(df: pd.DataFrame,
                                                                            phone_number_df,
                                                                            df_exploded,
                                                                            cm_db_df)
-    export_fu(fu_df, cm_deals_final_df, save_path, i)
+    export_fu(fu_df, cm_deals_final_df, save_path, i, output_type)
 
     return no_deal_id_final, cm_db_not_exist
     
