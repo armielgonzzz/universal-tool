@@ -1,6 +1,6 @@
 # **Missing Deals Tool**
 
-The **Missing Deals Tool** is designed to process Missing Deals Calls & Texts and creates a follow up or new deals in Pipedrive CRM.
+The **Missing Deals Tool** is designed to process Missing Deals Texts and creates a follow up or new deals in Pipedrive CRM.
 
 ---
 
@@ -32,7 +32,7 @@ The **Missing Deals Tool** is designed to process Missing Deals Calls & Texts an
 - And for those who do not have any contact information will be tagged `No Result` from the column `Note (if any)`.
 - Here are some of the key columns to look for output file `New Deals - Missing Deals`:  
     - `Deal - Title` - combined values of columns `Person - Name` and `Deal - County`
-    - `Deal - Label` - constant value of `Text Inactive - For Review`
+    - `Deal - Deal Stage` - `Deals to Process` if input file is Live, `Inactive - Conversion` if input file is Inactive
     - `Deal - County` - contains all of the counties and state for each of the contacts
     - `Deal - Unique Database ID` - a unique identifier for each of the contacts in the database
     - `Person - Name` - full name of the contact

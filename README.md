@@ -66,7 +66,7 @@ Each tool below is included in the Lead Management Tools app. Click the links fo
 
 - [AutoDialer Cleanup Tool](./tools/autodialer_cleanup_tool/autodialer.md) - Automates the process of cleaning up the phone list for AutoDialer based on a pre-defined list cleaner file.
 
-- [Missing Deals Tool](./tools/missing_deals_tool/missing_deals.md) - Processes Missing Deals Calls & Texts and creates a follow up or new deals in Pipedrive CRM.
+- [Missing Deals Tool](./tools/missing_deals_tool/missing_deals.md) - Processes Missing Deals Texts and creates a follow up or new deals in Pipedrive CRM.
 
 Each of these tools operates independently, allowing you to use the necessary functionality without requiring access to all tools simultaneously.
 
