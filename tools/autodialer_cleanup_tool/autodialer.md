@@ -22,6 +22,7 @@ The **AutoDialer Cleanup Tool** automates the process of cleaning up the phone l
     - `SMS-Sent`
     - `Outbound-2weeks`
     - `FromOtherList`
+- Tool will also filter the generated output file to specific primary dispositions from Max Outbound Call table
 - No additional columns will be added from the cleaned output file of `AutoDialer List File`.
 - Cleaned output file of the tool will have a prefix of `(Clean file)` + the original filename of the input file.
 
