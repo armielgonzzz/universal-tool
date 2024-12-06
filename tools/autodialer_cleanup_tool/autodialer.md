@@ -22,7 +22,7 @@ The **AutoDialer Cleanup Tool** automates the process of cleaning up the phone l
     - `SMS-Sent`
     - `Outbound-2weeks`
     - `FromOtherList`
-- Tool will also filter the generated output file to specific primary dispositions from Max Outbound Calls table:
+- Tool will also filter out the generated output file to specific primary dispositions from Max Outbound Calls table:
     - `Business/ Work number`
     - `Sold Interests`
     - `Incorrect contact / Wrong number`
