@@ -160,14 +160,16 @@ def get_phone_set(cleaner_file: str) -> set:
     list_cleaner_df = pd.read_excel(cleaner_file,
                                     sheet_name=['ContMgt+MVP+JC+PD+RC',
                                                 'DNC',
-                                                'SMS-Sent',
+                                                'JCSMS-Sent',
+                                                'RCSMS-Sent',
                                                 'Outbound-2weeks',
                                                 'FromOtherList'],
                                     header=None)
     
     final_list_cleaner_df = pd.concat([list_cleaner_df['ContMgt+MVP+JC+PD+RC'],
                                         list_cleaner_df['DNC'],
-                                        list_cleaner_df['SMS-Sent'],
+                                        list_cleaner_df['JCSMS-Sent'],
+                                        list_cleaner_df['RCSMS-Sent'],
                                         list_cleaner_df['Outbound-2weeks'],
                                         list_cleaner_df['FromOtherList']])
 
