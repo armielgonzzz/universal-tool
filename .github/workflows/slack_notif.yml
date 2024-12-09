@@ -22,9 +22,13 @@ jobs:
           echo "tag_name=$TAG_NAME" >> $env:GITHUB_ENV
           echo "comments=$COMMENTS" >> $env:GITHUB_ENV
 
-      # Send a request to Slack workflow
+      # Send a request to Slack
       - name: Notify Slack
+        shell: pwsh
         run: |
-          curl -X POST -H "Content-Type: application/json" \
-          -d "{\"body\": \"${{ env.comments }}\", \"version\": \"${{ env.tag_name }}\"}" \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
+          $body = @{
+              body = $env:comments
+              version = $env:tag_name
+          } | ConvertTo-Json
+
+          Invoke-RestMethod -Uri ${{ secrets.SLACK_WEBHOOK_URL }} -Method Post -ContentType 'application/json' -Body $body
