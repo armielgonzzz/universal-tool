@@ -11,7 +11,8 @@ jobs:
       # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v2
-
+        with:
+          fetch-depth: 0
       # Get the tag details
       - name: Get tag details
         id: get_tag_details
