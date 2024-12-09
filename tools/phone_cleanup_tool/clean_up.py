@@ -32,9 +32,14 @@ def apply_all_filters(df: pd.DataFrame) -> pd.DataFrame:
     
     df['reason_for_removal'] = [[] for _ in range(len(df))]
     
-    if 'Rolling 30 Days Rvm Count' and 'Rolling 30 Days Text Marketing Count' in df.columns:
+    if 'Rolling 30 Days Rvm Count' in df.columns:
         df['Rolling 30 Days Rvm Count'] = pd.to_numeric(df['Rolling 30 Days Rvm Count'], errors='coerce')
+    
+    if 'Rolling 30 Days Text Marketing Count' in df.columns:
         df['Rolling 30 Days Text Marketing Count'] = pd.to_numeric(df['Rolling 30 Days Text Marketing Count'], errors='coerce')
+    
+    if 'Rolling 30 Days Max Outbound Count' in df.columns:
+        df['Rolling 30 Days Max Outbound Count'] = pd.to_numeric(df['Rolling 30 Days Max Outbound Count'], errors='coerce')
 
     if 'in_pipedrive' in df.columns:
         in_pipedrive_mask = df['in_pipedrive'].str.upper() == 'Y'
@@ -80,9 +85,9 @@ def apply_all_filters(df: pd.DataFrame) -> pd.DataFrame:
         last_marketing_text_mask = check_date(df, 'Latest Text Marketing Date (Sent)')
         apply_mask(df, last_marketing_text_mask, 'Latest Text Marketing Date (Sent) - last 7 days from tool run date')
 
-    if 'Rolling 30 Days Rvm Count' and 'Rolling 30 Days Text Marketing Count' in df.columns:
-        rolling_days_mask = (df['Rolling 30 Days Rvm Count'] + df['Rolling 30 Days Text Marketing Count']) >= 3
-        apply_mask(df, rolling_days_mask, 'Rolling 30 Days Rvm Count and Rolling 30 Days Text Marketing Count - total >= 3')
+    if 'Rolling 30 Days Max Outbound Count' and 'Rolling 30 Days Text Marketing Count' in df.columns:
+        rolling_days_mask = (df['Rolling 30 Days Max Outbound Count'] + df['Rolling 30 Days Text Marketing Count']) >= 3
+        apply_mask(df, rolling_days_mask, 'Rolling 30 Days Max Outbound Count and Rolling 30 Days Text Marketing Count - total >= 3')
 
     if 'Deal - ID' in df.columns:
         deal_id_mask = df['Deal - ID'].notna()
@@ -92,6 +97,7 @@ def apply_all_filters(df: pd.DataFrame) -> pd.DataFrame:
         deal_text_opt_in = df['Deal - Text Opt-in'].str.upper().str.contains('NO', na=False)
         apply_mask(df, deal_text_opt_in, 'Deal - Text Opt-in is No')
     
+    # Deduplication
     df['reason_length'] = df['reason_for_removal'].apply(len)
     df_longest_reason = df.loc[df.groupby('phone_number', sort=False)['reason_length'].idxmax()]
     df_longest_reason = df_longest_reason.drop(columns=['reason_length'])
@@ -145,14 +151,11 @@ def main(files: tuple, save_path: str):
             filtered_df = apply_all_filters(df)
             export_output(filtered_df, file, save_path)
         
-        print("Sucessfully processed all files")
+        print("Successfully processed all files")
 
     except Exception as e:
         print(f"An error occurred: {e}")
         raise RuntimeError
-        
-        
-    
 
 if __name__ == "__main__":
     main()

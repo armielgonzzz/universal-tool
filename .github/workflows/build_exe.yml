@@ -46,3 +46,19 @@ jobs:
           files: release/main.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Get the tag comments and latest tag
+      - name: Get tag details
+        id: get_tag_details
+        run: |
+          TAG_NAME=$(git describe --tags --abbrev=0)
+          COMMENTS=$(git tag -l --format='%(contents)' "$TAG_NAME")
+          echo "tag_name=$TAG_NAME" >> $GITHUB_ENV
+          echo "comments=$COMMENTS" >> $GITHUB_ENV
+
+      # Send a request to Slack workflow
+      - name: Notify Slack
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d "{\"body\": \"${{ env.comments }}\", \"version\": \"${{ env.tag_name }}\"}" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
