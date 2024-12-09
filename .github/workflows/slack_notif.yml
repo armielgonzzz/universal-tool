@@ -8,6 +8,10 @@ jobs:
     runs-on: windows-latest
     
     steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       # Get the tag details
       - name: Get tag details
         id: get_tag_details
