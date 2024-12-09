@@ -13,6 +13,8 @@ jobs:
       # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       # Set up Python environment
       - name: Set up Python
@@ -47,18 +49,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Get the tag comments and latest tag
+      # Get the tag details
       - name: Get tag details
         id: get_tag_details
+        shell: pwsh
         run: |
-          TAG_NAME=$(git describe --tags --abbrev=0)
-          COMMENTS=$(git tag -l --format='%(contents)' "$TAG_NAME")
-          echo "tag_name=$TAG_NAME" >> $GITHUB_ENV
-          echo "comments=$COMMENTS" >> $GITHUB_ENV
+          $TAG_NAME = git describe --tags --abbrev=0
+          $COMMENTS = git tag -l --format='%(contents)' $TAG_NAME
+          echo "tag_name=$TAG_NAME" >> $env:GITHUB_ENV
+          echo "comments=$COMMENTS" >> $env:GITHUB_ENV
 
-      # Send a request to Slack workflow
+      # Send a request to Slack
       - name: Notify Slack
+        shell: pwsh
         run: |
-          curl -X POST -H "Content-Type: application/json" \
-          -d "{\"body\": \"${{ env.comments }}\", \"version\": \"${{ env.tag_name }}\"}" \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
+          $body = @{
+              body = $env:comments
+              version = $env:tag_name
+          } | ConvertTo-Json
+
+          Invoke-RestMethod -Uri ${{ secrets.SLACK_WEBHOOK_URL }} -Method Post -ContentType 'application/json' -Body $body
