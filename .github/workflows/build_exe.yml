@@ -55,7 +55,7 @@ jobs:
         shell: pwsh
         run: |
           $TAG_NAME = git describe --tags --abbrev=0
-          $COMMENTS = git tag -l --format='%(contents)' $TAG_NAME
+          $COMMENTS = git show -s --format=%B $TAG_NAME
           echo "tag_name=$TAG_NAME" >> $env:GITHUB_ENV
           echo "comments=$COMMENTS" >> $env:GITHUB_ENV
 
