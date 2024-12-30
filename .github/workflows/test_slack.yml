@@ -1,0 +1,38 @@
+name: Test Get Tag and Notify Slack
+
+on:
+  workflow_dispatch: # Allows manual triggering of the workflow
+
+jobs:
+  test:
+    runs-on: windows-latest
+    
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      # Get the tag details
+      - name: Get tag details
+        id: get_tag_details
+        shell: pwsh
+        run: |
+          $TAG_NAME = git describe --tags --abbrev=0
+          $COMMENTS = git show -s --format=%B $TAG_NAME
+          echo "tag_name=$TAG_NAME" >> $env:GITHUB_ENV
+          echo "comments=$COMMENTS" >> $env:GITHUB_ENV
+
+      # Notify Slack
+      - name: Notify Slack
+        shell: pwsh
+        run: |
+          $body = @(
+              @{
+                  body = $env:comments
+                  version = $env:tag_name
+              }
+          ) | ConvertTo-Json
+
+          Invoke-RestMethod -Uri ${{ secrets.SLACK_WEBHOOK_URL }} -Method Post -ContentType 'application/json' -Body $body
