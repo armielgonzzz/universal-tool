@@ -32,7 +32,7 @@ def format_mailing_address(row: pd.Series):
     md_city = str(row['md_city']).upper() if not pd.isna(row['md_city']) else ''
     md_state = str(row['md_state']).upper() if not pd.isna(row['md_state']) else ''
     if md_address:
-        return f"{md_address} {md_city} {md_state}"
+        return f"{md_address}, {md_city}, {md_state}"
     
 def apply_mask(df: pd.DataFrame, mask, output_value) -> None:
     df.loc[mask, 'reason_for_removal'] = df.loc[mask, 'reason_for_removal'].apply(
@@ -71,66 +71,67 @@ def apply_filters(df: pd.DataFrame, pipedrive_df: pd.DataFrame):
 
     # deal_id
     deal_id_mask = df['deal_id'].notna()
-    apply_mask(df, deal_id_mask, 'deal_id not empty/blank')
+    apply_mask(df, deal_id_mask, 'deal_id not empty')
 
     # deal_status
     deal_status_mask = df['deal_status'].notna()
-    apply_mask(df, deal_status_mask, 'deal_status not empty/blank')
+    apply_mask(df, deal_status_mask, 'deal_status not empty')
 
     # person_id
     person_id_mask = df['person_id'].notna()
-    apply_mask(df, person_id_mask, 'person_id not empty/blank')
+    apply_mask(df, person_id_mask, 'person_id not empty')
 
     # category
     category_mask = df['category'].notna()
-    apply_mask(df, category_mask, 'category not empty/blank')
+    apply_mask(df, category_mask, 'category not empty')
 
     # Mail Marketing Undel Flag
     undel_mask = df['Mail Marketing Undel Flag'].notna()
-    apply_mask(df, undel_mask, 'Mail Marketing Undel Flag not empty/blank')
+    apply_mask(df, undel_mask, 'Mail Marketing Undel Flag not empty')
 
     # Mail Marketing Bad Data Flag
     bad_data_mask = df['Mail Marketing Bad Data Flag'].notna()
-    apply_mask(df, bad_data_mask, 'Mail Marketing Bad Data Flag not empty/blank')
+    apply_mask(df, bad_data_mask, 'Mail Marketing Bad Data Flag not empty')
 
     # Deal - ID
     deal_id_2_mask = df['Deal - ID'].notna()
-    apply_mask(df, deal_id_2_mask, 'Deal - ID not empty/blank')
+    apply_mask(df, deal_id_2_mask, 'Deal - ID not empty')
 
     # Deal - Title
     deal_title_mask = df['Deal - Title'].notna()
-    apply_mask(df, deal_title_mask, 'Deal - Title not empty/blank')
+    apply_mask(df, deal_title_mask, 'Deal - Title not empty')
 
     # Deal - Value
     deal_value_mask = df['Deal - Value'].notna()
-    apply_mask(df, deal_value_mask, 'Deal - Value not empty/blank')
+    apply_mask(df, deal_value_mask, 'Deal - Value not empty')
 
     # Deal - County
     deal_county_mask = df['Deal - County'].notna()
-    apply_mask(df, deal_county_mask, 'Deal - County not empty/blank')
+    apply_mask(df, deal_county_mask, 'Deal - County not empty')
 
     # Deal - Created
     deal_created_mask = df['Deal - Created'].notna()
-    apply_mask(df, deal_created_mask, 'Deal - Created not empty/blank')
+    apply_mask(df, deal_created_mask, 'Deal - Created not empty')
 
     # Last Marketing Date
     last_marketing_date_mask = check_date(df, 'Last Marketing Date')
     apply_mask(df, last_marketing_date_mask, 'Last marketing date is within 60 days from run date')
 
     # Deal Title
-    df['Deal - Title'] = df.apply(lambda x: format_deal_title(x), axis=1)
-    match_title_mask = df['Deal - Title'].str.upper().isin(pipedrive_df['Deal - Title'].str.upper())
-    apply_mask(df, match_title_mask, 'Found matching Deal - Title')
+    df['new_deal_title'] = df.apply(lambda x: format_deal_title(x), axis=1)
+    match_title_mask = df['new_deal_title'].str.upper().isin(pipedrive_df['Deal - Title'].str.upper())
+    apply_mask(df, match_title_mask, 'Found matching Deal Title from Pipedrive file')
 
     # Mailing Address
+    pipedrive_df['Person - Mailing Address'] = pipedrive_df['Person - Mailing Address'].str.replace(r', USA(, \d{5})?$', '', regex=True)
     df['mailing_address'] = df.apply(lambda x: format_mailing_address(x), axis=1)
     mailing_address_mask = df['mailing_address'].str.upper().isin(pipedrive_df['Person - Mailing Address'].str.upper())
-    apply_mask(df, mailing_address_mask, 'Found matching Person - Mailing Address')
+    apply_mask(df, mailing_address_mask, 'Found matching Mailing Address from Pipedrive file')
 
     # Drop duplicates and columns
     df.drop_duplicates(subset=['contact_id'], inplace=True)
     df.drop_duplicates(subset=['first_name', 'last_name', 'md_address1', 'md_city', 'md_state'], inplace=True)
-    df.drop(columns=['mailing_address'], axis=1, inplace=True)
+    df.drop(columns=['mailing_address', 'new_deal_title'], axis=1, inplace=True)
 
     # Join all reasons with comma separator
     df['reason_for_removal'] = df['reason_for_removal'].apply(lambda lst: ', '.join(lst) if isinstance(lst, list) else lst)
@@ -154,6 +155,7 @@ def export_output(df: pd.DataFrame, file_path: str, save_path: str) -> None:
 def main(files: tuple, pipedrive_file: str, save_path: str):
 
     try:
+        print("Reading Pipedrive Export file")
         pipedrive_df = read_file(pipedrive_file)
 
         for file in files:

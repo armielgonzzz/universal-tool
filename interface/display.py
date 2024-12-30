@@ -9,6 +9,7 @@ from tools.pipedrive_automation_tool.pipedrive_automation import main as run_aut
 from tools.autodialer_cleanup_tool.cleanup_autodialer import main as run_autodialer
 from tools.missing_deals_tool.missing_deals import main as run_missing_deals
 from tools.missing_deals_tool.lookup import main as run_missing_deals_lookup
+from tools.marketing_cleanup_tool.marketing_clean_up import main as run_marketing_cleanup
 
 # Outside function that will center a new pop up window relative to the main window
 def center_new_window(main_window: ctk.CTkFrame,
@@ -150,6 +151,14 @@ class App(ctk.CTk):
         self.missing_deals_button.grid(row=5, column=0, padx=10, pady=5, sticky='nsew')
         self.missing_deals_button.bind("<Button-1>", lambda event: self.track_button_click(5))
 
+        self.marketing_cleanup_button = ctk.CTkButton(self.tool_options_frame,
+                                                     text='Marketing Cleanup Tool',
+                                                     command=lambda:self.show_frame(MarketingCleanupTool),
+                                                     fg_color='#5b5c5c',
+                                                     hover_color='#424343')
+        self.marketing_cleanup_button.grid(row=6, column=0, padx=10, pady=5, sticky='nsew')
+        self.marketing_cleanup_button.bind("<Button-1>", lambda event: self.track_button_click(6))
+
         self.clicked_button_id = ctk.IntVar()
         self.current_frame = None
         self.input_file_check, self.save_path_check = False, False
@@ -237,6 +246,10 @@ class App(ctk.CTk):
 
             5: [
                 "Missing Deals Text List"
+               ],
+            
+            6: [
+                "Marketing Cleanup Tool List"
                ]
         }
         checkbox_labels = output_checklist_dict[self.clicked_button_id.get()]
@@ -744,6 +757,105 @@ class MissingDealsText(ctk.CTkFrame):
                                                                                         self.files_to_process,
                                                                                         self.save_path))
             run_tool_button.grid(row=0, column=1, padx=10, pady=5)
+
+class MarketingCleanupTool(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+
+        self.controller = controller
+        self.controller.input_file_check = False
+        self.controller.save_path_check = False
+        self.pipedrive_file = False
+        self.files_to_clean = False
+        self.save_path = False
+        self.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(7, weight=1)
+
+        label = ctk.CTkLabel(self,
+                             text="Marketing Cleanup Tool",
+                             font=ctk.CTkFont(
+                                 size=30,
+                                 weight='bold'
+                             ))
+        label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+
+        list_cleaner_button = ctk.CTkButton(self,
+                                            text="Select pipedrive file",
+                                            fg_color='#5b5c5c',
+                                            hover_color='#424343',
+                                            command=lambda:self.select_cleaner_file(self))
+        list_cleaner_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
+
+        list_button = ctk.CTkButton(self,
+                                    text="Select files to clean",
+                                    fg_color='#5b5c5c',
+                                    hover_color='#424343',
+                                    command=lambda:self.select_files_to_clean(self))
+        list_button.grid(row=3, column=0, padx=5, pady=5, sticky="ns")
+
+        list_button = ctk.CTkButton(self,
+                                    text="Save output files to",
+                                    fg_color='#5b5c5c',
+                                    hover_color='#424343',
+                                    command=lambda:self.select_save_path(self))
+        list_button.grid(row=5, column=0, padx=5, pady=5, sticky="ns")
+    
+    def select_cleaner_file(self, window):
+
+        self.pipedrive_file = filedialog.askopenfilename(title="Select list cleaner file",
+                                                        filetypes=[("All Files", "*.*")])
+        if self.pipedrive_file:
+            cleaner_file_label = ctk.CTkLabel(window,
+                                              text=f"{os.path.basename(self.pipedrive_file)}",
+                                              fg_color="transparent")
+            cleaner_file_label.grid(row=2, column=0, padx=5, pady=5)
+            self.check_run()
+
+    def select_files_to_clean(self, window):
+
+        self.files_to_clean = filedialog.askopenfilenames(title="Select files to clean",
+                                                          filetypes=[("All Files", "*.*")])
+        if self.files_to_clean:
+            files_to_clean_frame = ctk.CTkScrollableFrame(window,
+                                                          height=80)
+            files_to_clean_frame.grid(row=4, column=0, padx=5, pady=5, sticky="ew")
+            files_to_clean_frame.grid_columnconfigure(0, weight=1)
+
+            for i, file in enumerate(self.files_to_clean):
+                file_name = os.path.basename(file)
+                selected_files_label = ctk.CTkLabel(files_to_clean_frame,
+                                                    text=file_name,
+                                                    wraplength=400)
+                selected_files_label.grid(row=i, column=0, padx=10, pady=3, sticky='nsew')       
+            self.check_run()         
+    
+    def select_save_path(self, window):
+        self.save_path = filedialog.askdirectory(title="Save directory")
+        if self.save_path:
+            save_path_label = ctk.CTkLabel(window,
+                                           text=f"{self.save_path}",
+                                           fg_color="transparent",
+                                           wraplength=400)
+            save_path_label.grid(row=6, column=0, padx=5, pady=5)
+            self.check_run()
+
+    def check_run(self):
+        if self.pipedrive_file and self.files_to_clean and self.save_path:
+            run_tool_button = ctk.CTkButton(self,
+                                            text='RUN TOOL',
+                                            height=36,
+                                            width=240,
+                                            fg_color='#d99125',
+                                            hover_color='#ae741e',
+                                            text_color='#141414',
+                                            corner_radius=50,
+                                            font=ctk.CTkFont(size=18, weight='bold'),
+                                            command=lambda:self.controller.trigger_tool(run_marketing_cleanup,
+                                                                                        self.files_to_clean,
+                                                                                        self.pipedrive_file,
+                                                                                        self.save_path))
+            run_tool_button.grid(row=7, column=0, padx=10, pady=5)
 
 
 def main() -> None:
