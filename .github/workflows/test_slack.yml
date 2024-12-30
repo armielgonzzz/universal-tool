@@ -24,9 +24,6 @@ jobs:
           
           # Extract the tag message
           $TAG_MESSAGE = git for-each-ref refs/tags/$TAG_NAME --format="%(contents)"
-
-          # Replace newlines with \\n for Slack
-          $TAG_MESSAGE_ESCAPED = $TAG_MESSAGE -replace "\n", "\\n"
           
           # Output the tag name and message as environment variables
           echo "tag_name=$TAG_NAME" >> $env:GITHUB_ENV
