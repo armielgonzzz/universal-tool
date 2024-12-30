@@ -54,18 +54,25 @@ jobs:
         id: get_tag_details
         shell: pwsh
         run: |
+          # Get the latest tag
           $TAG_NAME = git describe --tags --abbrev=0
-          $COMMENTS = git show -s --format=%B $TAG_NAME
+          
+          # Extract the tag message
+          $TAG_MESSAGE = git tag -l --format="%(contents)" $TAG_NAME
+          
+          # Output the tag name and message as environment variables
           echo "tag_name=$TAG_NAME" >> $env:GITHUB_ENV
-          echo "comments=$COMMENTS" >> $env:GITHUB_ENV
+          echo "tag_message=$TAG_MESSAGE" >> $env:GITHUB_ENV
 
-      # Send a request to Slack
+      # Notify Slack
       - name: Notify Slack
         shell: pwsh
         run: |
+          # Prepare the payload
           $body = @{
-              body = $env:comments
+              body = $env:tag_message
               version = $env:tag_name
-          } | ConvertTo-Json
+          } | ConvertTo-Json -Depth 2
 
+          # Send the notification
           Invoke-RestMethod -Uri ${{ secrets.SLACK_WEBHOOK_URL }} -Method Post -ContentType 'application/json' -Body $body
