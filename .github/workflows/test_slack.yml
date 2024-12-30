@@ -23,7 +23,7 @@ jobs:
           $TAG_NAME = git describe --tags --abbrev=0
           
           # Extract the tag message
-          $TAG_MESSAGE = git tag -l --format="%(contents)" $TAG_NAME
+          $TAG_MESSAGE = git for-each-ref refs/tags/$TAG_NAME --format="%(contents)"
           
           # Output the tag name and message as environment variables
           echo "tag_name=$TAG_NAME" >> $env:GITHUB_ENV
