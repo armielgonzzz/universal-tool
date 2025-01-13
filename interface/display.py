@@ -587,7 +587,8 @@ class AutoDialerCleaner(ctk.CTkFrame):
         update_cleaner_button = ctk.CTkButton(self,
                                             text="Update list cleaner file",
                                             fg_color='#5b5c5c',
-                                            hover_color='#424343')
+                                            hover_color='#424343',
+                                            command=lambda:self.update_list_cleaner())
         update_cleaner_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
 
         update_cleaner_button = ctk.CTkButton(self,
@@ -667,16 +668,13 @@ class AutoDialerCleaner(ctk.CTkFrame):
                                                                                         self.save_path))
             run_tool_button.grid(row=8, column=0, padx=10, pady=5)
 
-    
-
-
     def update_list_cleaner(self):
 
         def submit_action(window):
             user_input = input_field.get()
             if user_input:
-                self.controller.trigger_tool(update_list_cleaner_file, user_input)
                 window.destroy()
+                self.controller.trigger_tool(update_list_cleaner_file, user_input)
                 
 
         # Create the authentication frame (a new top-level window)
@@ -700,7 +698,7 @@ class AutoDialerCleaner(ctk.CTkFrame):
         input_field.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
 
         submit_button = ctk.CTkButton(authentication_frame,
-                                      text="Submit",
+                                      text="Update List Cleaner",
                                       fg_color='#d99125',
                                       hover_color='#ae741e',
                                       text_color='#141414',

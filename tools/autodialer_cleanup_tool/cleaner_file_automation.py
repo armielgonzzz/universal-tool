@@ -184,9 +184,8 @@ def add_sly(path: str, excel_file: str, dbx):
         
         df.to_excel(writer, sheet_name='DNC', index=False, header=False)
 
-def add_contact_center(path: str, excel_file: str, dbx):
+def add_contact_center(df: pd.DataFrame, excel_file: str, dbx):
     print("Adding Sheet ContactMgtLogs")
-    df = read_dropbox_file(path, dbx)
     fourteen_days_ago = pd.to_datetime('today') - timedelta(days=14)
     df['Date'] = pd.to_datetime(df['Date'])
     df = df[df['Media Type Name'] != 'E-Mail']
@@ -216,9 +215,8 @@ def add_mvp(path: str, excel_file: str, dbx):
     with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         final_df.to_excel(writer, sheet_name='MVPLogs', index=False, header=False)
 
-def add_rc(path: str, excel_file: str, dbx):
+def add_rc(df: pd.DataFrame, excel_file: str, dbx):
     print("Adding Sheet RCSMS-Received")
-    df = read_dropbox_file(path, dbx)
     thirty_days_ago = pd.to_datetime('today', utc=True) - timedelta(days=30)
     df['Creation Time (UTC)'] = pd.to_datetime(df['Creation Time (UTC)'], utc=True)
     received_df = df[df['Direction'] == 'Inbound'][['From']]
@@ -235,6 +233,9 @@ def add_rc(path: str, excel_file: str, dbx):
     with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         print("Adding Sheet RCSMS-Sent")
         sent_df.to_excel(writer, sheet_name='RCSMS-Sent', index=False, header=False)
+
+    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        pd.DataFrame().to_excel(writer, sheet_name='FromOtherList', index=False, header=False)
 
 def get_latest_file(folder_path, dbx):
     try:
@@ -303,6 +304,39 @@ def load_sheets(path, dbx, conversion_dict):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+def concat_contact_center_files(path: str, dbx):
+
+    result = dbx.files_list_folder(path)
+    contact_center_files = result.entries
+    df_list = []
+
+    for file in contact_center_files:
+        if isinstance(file, dropbox.files.FileMetadata):
+            file_path = file.path_lower
+            df = read_dropbox_file(file_path, dbx)
+            df_list.append(df)
+    
+    if df_list:
+        combined_df = pd.concat(df_list)
+        return combined_df
+    
+def concat_rc_files(path: str, dbx):
+
+    result = dbx.files_list_folder(path)
+    rc_files = result.entries
+    df_list = []
+
+    for file in rc_files:
+        if isinstance(file, dropbox.files.FileMetadata):
+            file_path = file.path_lower
+            df = read_dropbox_file(file_path, dbx)
+            df_list.append(df)
+    
+    if df_list:
+        combined_df = pd.concat(df_list)
+        return combined_df
+
+
 def create_local_list_cleaner(path: str) -> None:
 
     print("Creating new local list cleaner file")
@@ -327,13 +361,11 @@ def main(auth_code: str):
         local_list_cleaner_path = './data/List Cleaner File.xlsx'
         shared_folder_path = "/list cleaner & jc dnc"
         conversion_dict = {
-            "contact_center": add_contact_center,
             "jc": add_jc,
             "mvp": add_mvp,
             "pd_db": add_unique_db,
             "pd_phone": add_pd_phones,
             "pd_remove": add_remove_list,
-            "rc": add_rc,
             "sly": add_sly
         }
 
@@ -342,6 +374,14 @@ def main(auth_code: str):
 
         # Update the list cleaner file
         load_sheets(shared_folder_path, dbx, conversion_dict)
+
+        # Process contact_center folder files
+        contact_center_df = concat_contact_center_files('/list cleaner & jc dnc/contact_center', dbx)
+        add_contact_center(contact_center_df, './data/List Cleaner File.xlsx', dbx)
+
+        # Process rc folder files
+        rc_df = concat_rc_files('/list cleaner & jc dnc/rc', dbx)
+        add_rc(rc_df, './data/List Cleaner File.xlsx', dbx)
 
         # Upload to dropbox
         export_to_dropbox(local_list_cleaner_path, dbx)
