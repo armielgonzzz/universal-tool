@@ -102,6 +102,10 @@ def apply_all_filters(df: pd.DataFrame) -> pd.DataFrame:
     df_longest_reason = df.loc[df.groupby('phone_number', sort=False)['reason_length'].idxmax()]
     df_longest_reason = df_longest_reason.drop(columns=['reason_length'])
 
+    # Capitalization of names
+    columns_to_transform = ['full_name', 'first_name', 'last_name']
+    df_longest_reason[columns_to_transform] = df_longest_reason[columns_to_transform].applymap(lambda x: x.title() if isinstance(x, str) else x)
+
     return df_longest_reason
 
 

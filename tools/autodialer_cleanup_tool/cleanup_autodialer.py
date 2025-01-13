@@ -81,6 +81,10 @@ def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Dat
 
 def export_output(df: pd.DataFrame, file_path: str, save_path: str) -> None:
 
+    # Capitalization of all names
+    columns_to_transform = ['Owner','Combined Name', 'First Name', 'Middle Name', 'Last Name']
+    df[columns_to_transform] = df[columns_to_transform].applymap(lambda x: x.title() if isinstance(x, str) else x)
+
     filename = os.path.basename(file_path)
     if filename.endswith('.csv'):
         df.to_csv(f"{save_path}/(Clean file) {filename}", index=False)

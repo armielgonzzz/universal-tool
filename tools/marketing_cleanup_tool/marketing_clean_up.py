@@ -136,6 +136,10 @@ def apply_filters(df: pd.DataFrame, pipedrive_df: pd.DataFrame):
     # Join all reasons with comma separator
     df['reason_for_removal'] = df['reason_for_removal'].apply(lambda lst: ', '.join(lst) if isinstance(lst, list) else lst)
 
+    # Capitalization of all names
+    columns_to_transform = ['full_name', 'first_name', 'middle_name', 'last_name']
+    df[columns_to_transform] = df[columns_to_transform].applymap(lambda x: x.title() if isinstance(x, str) else x)
+
     return df
 
 def export_output(df: pd.DataFrame, file_path: str, save_path: str) -> None:
