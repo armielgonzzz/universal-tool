@@ -10,6 +10,9 @@ from tools.autodialer_cleanup_tool.cleanup_autodialer import main as run_autodia
 from tools.missing_deals_tool.missing_deals import main as run_missing_deals
 from tools.missing_deals_tool.lookup import main as run_missing_deals_lookup
 from tools.marketing_cleanup_tool.marketing_clean_up import main as run_marketing_cleanup
+from tools.autodialer_cleanup_tool.cleaner_file_automation import dropbox_authentication
+from tools.autodialer_cleanup_tool.cleaner_file_automation import main as update_list_cleaner_file
+
 
 # Outside function that will center a new pop up window relative to the main window
 def center_new_window(main_window: ctk.CTkFrame,
@@ -571,7 +574,7 @@ class AutoDialerCleaner(ctk.CTkFrame):
         self.save_path = False
         self.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(7, weight=1)
+        self.grid_rowconfigure(8, weight=1)
 
         label = ctk.CTkLabel(self,
                              text="AutoDialer Cleanup Tool",
@@ -579,28 +582,34 @@ class AutoDialerCleaner(ctk.CTkFrame):
                                  size=30,
                                  weight='bold'
                              ))
-        label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+        label.grid(row=0, column=0, padx=10, pady=(10,0), sticky='nsew')
 
-        list_cleaner_button = ctk.CTkButton(self,
-                                            text="Select list cleaner file",
+        update_cleaner_button = ctk.CTkButton(self,
+                                            text="Update list cleaner file",
                                             fg_color='#5b5c5c',
-                                            hover_color='#424343',
-                                            command=lambda:self.select_cleaner_file(self))
-        list_cleaner_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
+                                            hover_color='#424343')
+        update_cleaner_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
+
+        update_cleaner_button = ctk.CTkButton(self,
+                                              text="Select list cleaner file",
+                                              fg_color='#5b5c5c',
+                                              hover_color='#424343',
+                                              command=lambda:self.select_cleaner_file(self))
+        update_cleaner_button.grid(row=2, column=0, padx=5, pady=5, sticky="ns")
 
         list_button = ctk.CTkButton(self,
                                     text="Select files to clean",
                                     fg_color='#5b5c5c',
                                     hover_color='#424343',
                                     command=lambda:self.select_files_to_clean(self))
-        list_button.grid(row=3, column=0, padx=5, pady=5, sticky="ns")
+        list_button.grid(row=4, column=0, padx=5, pady=5, sticky="ns")
 
         list_button = ctk.CTkButton(self,
                                     text="Save output files to",
                                     fg_color='#5b5c5c',
                                     hover_color='#424343',
                                     command=lambda:self.select_save_path(self))
-        list_button.grid(row=5, column=0, padx=5, pady=5, sticky="ns")
+        list_button.grid(row=6, column=0, padx=5, pady=5, sticky="ns")
     
     def select_cleaner_file(self, window):
 
@@ -610,7 +619,7 @@ class AutoDialerCleaner(ctk.CTkFrame):
             cleaner_file_label = ctk.CTkLabel(window,
                                               text=f"{os.path.basename(self.cleaner_file)}",
                                               fg_color="transparent")
-            cleaner_file_label.grid(row=2, column=0, padx=5, pady=5)
+            cleaner_file_label.grid(row=3, column=0, padx=5, pady=5)
             self.check_run()
 
     def select_files_to_clean(self, window):
@@ -620,7 +629,7 @@ class AutoDialerCleaner(ctk.CTkFrame):
         if self.files_to_clean:
             files_to_clean_frame = ctk.CTkScrollableFrame(window,
                                                           height=80)
-            files_to_clean_frame.grid(row=4, column=0, padx=5, pady=5, sticky="ew")
+            files_to_clean_frame.grid(row=5, column=0, padx=5, pady=5, sticky="ew")
             files_to_clean_frame.grid_columnconfigure(0, weight=1)
 
             for i, file in enumerate(self.files_to_clean):
@@ -638,7 +647,7 @@ class AutoDialerCleaner(ctk.CTkFrame):
                                            text=f"{self.save_path}",
                                            fg_color="transparent",
                                            wraplength=400)
-            save_path_label.grid(row=6, column=0, padx=5, pady=5)
+            save_path_label.grid(row=7, column=0, padx=5, pady=5)
             self.check_run()
 
     def check_run(self):
@@ -656,7 +665,51 @@ class AutoDialerCleaner(ctk.CTkFrame):
                                                                                         self.cleaner_file,
                                                                                         self.files_to_clean,
                                                                                         self.save_path))
-            run_tool_button.grid(row=7, column=0, padx=10, pady=5)
+            run_tool_button.grid(row=8, column=0, padx=10, pady=5)
+
+    
+
+
+    def update_list_cleaner(self):
+
+        def submit_action(window):
+            user_input = input_field.get()
+            if user_input:
+                self.controller.trigger_tool(update_list_cleaner_file, user_input)
+                window.destroy()
+                
+
+        # Create the authentication frame (a new top-level window)
+        authentication_frame = ctk.CTkToplevel(self)
+        authentication_frame.resizable(False, False)
+        authentication_frame.geometry("470x180")
+        authentication_frame.grid_columnconfigure(0, weight=1)
+        authentication_frame.grid_rowconfigure((2), weight=1)  # Adjust grid row configuration
+        authentication_frame.attributes('-topmost', True)
+        authentication_frame.title("Dropbox Authentication")
+
+        # Button to open authentication link
+        open_link = ctk.CTkButton(authentication_frame,
+                                text="Open Authentication Link",
+                                fg_color='#5b5c5c',
+                                hover_color='#424343',
+                                command=lambda: dropbox_authentication())
+        open_link.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+
+        input_field = ctk.CTkEntry(authentication_frame, placeholder_text="Enter the value here")
+        input_field.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
+
+        submit_button = ctk.CTkButton(authentication_frame,
+                                      text="Submit",
+                                      fg_color='#d99125',
+                                      hover_color='#ae741e',
+                                      text_color='#141414',
+                                      corner_radius=50,
+                                      font=ctk.CTkFont(size=18, weight='bold'),
+                                      command=lambda: submit_action(authentication_frame))
+        submit_button.grid(row=2, column=0, padx=10, pady=20, sticky='nsew')
+
+
 
 class MissingDealsText(ctk.CTkFrame):
     def __init__(self, parent, controller):
