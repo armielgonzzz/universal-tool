@@ -27,6 +27,8 @@ def export_to_dropbox(list_cleaner_file_path, dbx) -> None:
     with open(list_cleaner_file_path, 'rb') as f:
         print("Uploading to List Cleaner File to Dropbox")
         dbx.files_upload(f.read(), list_cleaner_dropbox_path, mode=dropbox.files.WriteMode.overwrite)
+    
+    print("Sucessfully uploaded Updated List Cleaner File to Dropbox")
 
 def read_dropbox_file(path: str, dbx):
     metadata, response = dbx.files_download(path)

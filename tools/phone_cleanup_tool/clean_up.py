@@ -1,6 +1,10 @@
+import re
 import os
 import pandas as pd
 from datetime import datetime, timedelta
+
+def is_valid_phone(phone):
+    return bool(re.fullmatch(r'\d{10,15}', phone))
 
 def read_file(path: str):
 
@@ -108,6 +112,45 @@ def apply_all_filters(df: pd.DataFrame) -> pd.DataFrame:
 
     return df_longest_reason
 
+def get_phone_set(cleaner_file: str) -> set:
+
+    list_cleaner_df = pd.read_excel(cleaner_file,
+                                    sheet_name=['ContMgt+MVP+JC+PD+RC',
+                                                'DNC',
+                                                'JCSMS-Sent',
+                                                'RCSMS-Sent',
+                                                'Outbound-2weeks',
+                                                'FromOtherList'],
+                                    header=None)
+    
+    final_list_cleaner_df = pd.concat([list_cleaner_df['ContMgt+MVP+JC+PD+RC'],
+                                        list_cleaner_df['DNC'],
+                                        list_cleaner_df['JCSMS-Sent'],
+                                        list_cleaner_df['RCSMS-Sent'],
+                                        list_cleaner_df['Outbound-2weeks'],
+                                        list_cleaner_df['FromOtherList']])
+
+    # Clean up the list and filter for valid phone numbers
+    valid_phone_set = set(int(phone) for phone in map(str, final_list_cleaner_df[0].tolist()) if is_valid_phone(phone))
+    return valid_phone_set
+
+def get_id_set(cleaner_file: str) -> set:
+
+    unique_db_df_list = pd.read_excel(cleaner_file,
+                                      sheet_name=['UniqueDB ID'])
+    unique_db_df = unique_db_df_list['UniqueDB ID']
+    valid_numbers = pd.to_numeric(unique_db_df['Deal - Unique Database ID'], errors='coerce')
+    valid_numbers = valid_numbers.dropna().astype(int)
+    valid_id_set = set(valid_numbers)
+    return valid_id_set
+
+def clean_contact_id(df: pd.DataFrame, id_set: set) -> pd.DataFrame:
+
+    if 'contact_id' in df.columns:
+        df['contact_id'] = df['contact_id'].apply(pd.to_numeric, errors='coerce').astype('Int64')
+        df = df[~df['contact_id'].isin(id_set)]
+
+    return df
 
 def export_output(df: pd.DataFrame, file_path: str, save_path: str) -> None:
 
@@ -141,11 +184,14 @@ def export_output(df: pd.DataFrame, file_path: str, save_path: str) -> None:
         print("No output generated. Invalid file format")
 
 
-def main(files: tuple, save_path: str):
+def main(cleaner_file: str, files: tuple, save_path: str):
 
     try:
-        # input_path = 'data'
-        # file_list = os.listdir(input_path)
+
+        print("Preparing List Cleaner File")
+
+        valid_phone_set = get_phone_set(cleaner_file)
+        valid_id_set = get_id_set(cleaner_file)
 
         for file in files:
 
@@ -153,7 +199,10 @@ def main(files: tuple, save_path: str):
 
             df = read_file(file)
             filtered_df = apply_all_filters(df)
-            export_output(filtered_df, file, save_path)
+            output_df = filtered_df[filtered_df['phone_number'].isin(valid_phone_set) == False]
+            final_df = clean_contact_id(output_df, valid_id_set)
+
+            export_output(final_df, file, save_path)
         
         print("Successfully processed all files")
 

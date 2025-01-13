@@ -306,7 +306,7 @@ class App(ctk.CTk):
 
     def display_phone_clean_tool(self):
 
-        self.input_file_check, self.save_path_check = False, False
+        self.input_file_check, self.save_path_check, self.cleaner_file_check = False, False, False
 
         self.current_frame = ctk.CTkFrame(self.tool_window_frame)
         self.current_frame.grid_rowconfigure(7, weight=1)
@@ -320,20 +320,27 @@ class App(ctk.CTk):
                                  weight='bold'
                              ))
         label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+
+        update_cleaner_button = ctk.CTkButton(self.current_frame,
+                                              text="Select list cleaner file",
+                                              fg_color='#5b5c5c',
+                                              hover_color='#424343',
+                                              command=lambda:self.select_list_cleaner_file(frame=self.current_frame, func=run_clean_up))
+        update_cleaner_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
         
         select_file_button = ctk.CTkButton(self.current_frame,
                                            text='Select files to process',
                                            command=lambda: self.open_select_file(frame=self.current_frame, func=run_clean_up),
                                            fg_color='#5b5c5c',
                                            hover_color='#424343')
-        select_file_button.grid(row=1, column=0, padx=10, pady=5)
+        select_file_button.grid(row=3, column=0, padx=10, pady=5)
 
         define_save_path_button = ctk.CTkButton(self.current_frame,
                                                 text='Save output files to',
                                                 command=lambda: self.select_save_directory(frame=self.current_frame, func=run_clean_up),
                                                 fg_color='#5b5c5c',
                                                 hover_color='#424343')
-        define_save_path_button.grid(row=4, column=0, padx=10, pady=5)
+        define_save_path_button.grid(row=5, column=0, padx=10, pady=5)
 
 
     def open_select_file(self, frame: ctk.CTkFrame, func):
@@ -342,17 +349,9 @@ class App(ctk.CTk):
                                                filetypes=[("All Files", "*.*")])
         if self.file_paths:
 
-            files_to_process_label = ctk.CTkLabel(frame,
-                                                  text='Files to Process',
-                                                  font=ctk.CTkFont(
-                                                      size=18,
-                                                      weight='bold'
-                                                  ))
-            files_to_process_label.grid(row=2, column=0, padx=10, pady=5)
-
             select_files_frame = ctk.CTkScrollableFrame(frame,height=100)
             select_files_frame.grid_columnconfigure(0, weight=1)
-            select_files_frame.grid(row=3, column=0, padx=30, pady=5, sticky='nsew')
+            select_files_frame.grid(row=4, column=0, padx=30, pady=5, sticky='nsew')
 
             for index, file in enumerate(self.file_paths):
                 file_name = os.path.basename(file)
@@ -364,10 +363,10 @@ class App(ctk.CTk):
             print(f"Files selected: {self.file_paths}")
             self.input_file_check = True
 
-            if self.input_file_check and self.save_path_check:
+            if self.input_file_check and self.save_path_check and self.cleaner_file:
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
-                                                command=lambda: self.trigger_tool(func, self.file_paths, self.save_path),
+                                                command=lambda: self.trigger_tool(func, self.cleaner_file, self.file_paths, self.save_path),
                                                 height=36,
                                                 width=240,
                                                 fg_color='#d99125',
@@ -391,21 +390,14 @@ class App(ctk.CTk):
                                        wraplength=400)
             save_path_label.grid(row=6, column=0, padx=30, pady=5, sticky='nsew', ipadx=8, ipady=8)
 
-            save_directory = ctk.CTkLabel(frame,
-                                          text='Save Directory',
-                                          font=ctk.CTkFont(
-                                              size=18,
-                                              weight='bold'
-                                              ))
-            save_directory.grid(row=5, column=0, padx=10, pady=5)
             save_path_label.configure(text=f"{self.save_path}")
             print(f"Directory selected: {self.save_path}")
             self.save_path_check = True
 
-            if self.input_file_check and self.save_path_check:
+            if self.input_file_check and self.save_path_check and self.cleaner_file:
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
-                                                command=lambda: self.trigger_tool(func, self.file_paths, self.save_path),
+                                                command=lambda: self.trigger_tool(func, self.cleaner_file, self.file_paths, self.save_path),
                                                 height=36,
                                                 width=240,
                                                 fg_color='#d99125',
@@ -418,6 +410,31 @@ class App(ctk.CTk):
                                                 ))
                 run_tool_button.grid(row=7, column=0, padx=10, pady=5)
     
+    def select_list_cleaner_file(self, frame: ctk.CTkFrame, func):
+        self.cleaner_file = filedialog.askopenfilename(title="Select list cleaner file",
+                                                        filetypes=[("All Files", "*.*")])
+        if self.cleaner_file:
+            cleaner_file_label = ctk.CTkLabel(frame,
+                                              text=f"{os.path.basename(self.cleaner_file)}",
+                                              fg_color="transparent")
+            cleaner_file_label.grid(row=2, column=0, padx=5, pady=5)
+            self.cleaner_file_check = True
+            if self.input_file_check and self.save_path_check and self.cleaner_file_check:
+                run_tool_button = ctk.CTkButton(frame,
+                                                text='RUN TOOL',
+                                                command=lambda: self.trigger_tool(func, self.cleaner_file, self.file_paths, self.save_path),
+                                                height=36,
+                                                width=240,
+                                                fg_color='#d99125',
+                                                hover_color='#ae741e',
+                                                text_color='#141414',
+                                                corner_radius=50,
+                                                font=ctk.CTkFont(
+                                                    size=18,
+                                                    weight='bold'
+                                                ))
+                run_tool_button.grid(row=7, column=0, padx=10, pady=5)
+
     def tool_running_window(self):
         
         tool_run_window = ctk.CTkToplevel()
