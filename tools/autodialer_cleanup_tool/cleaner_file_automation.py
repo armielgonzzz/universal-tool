@@ -1,3 +1,4 @@
+import re
 import os
 import pandas as pd
 import warnings
@@ -60,7 +61,9 @@ def add_pd_phones(path: str, excel_file: str, dbx):
         for phone_entry in phones_df[column]:
             # Convert each entry to a string, handle floats (remove .0), and split comma-separated values
             phone_entry = str(phone_entry).replace('.0', '')  # Remove `.0` from floats
-            all_phone_numbers.extend([phone.strip() for phone in phone_entry.split(',') if phone.strip()])
+            valid_phone_pattern = re.compile(r'^\+?\d{10}$')  # A simple pattern for phone numbers (you can adjust it)
+            all_phone_numbers.extend([phone.strip() for phone in phone_entry.split(',') if phone.strip() and valid_phone_pattern.match(phone.strip())])
+            # all_phone_numbers.extend([phone.strip() for phone in phone_entry.split(',') if phone.strip()])
 
     # Create a DataFrame from the extracted phone numbers
     result_df = pd.DataFrame({'Phone Number': all_phone_numbers})
@@ -76,7 +79,7 @@ def add_pd_phones(path: str, excel_file: str, dbx):
     # Use ExcelWriter to append the DataFrame to the existing file
     with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         
-        result_df.to_excel(writer, sheet_name='ContMgt+MVP+JC+PD+RC', index=False, header=False)
+        result_df.to_excel(writer, sheet_name='ContMgt+MVP+JC+PD+RC', index=False)
 
 def add_unique_db(path: str, excel_file: str, dbx):
     print("Adding Sheet UniqueDB ID")
@@ -120,7 +123,9 @@ def add_remove_list(path: str, excel_file: str, dbx):
         for phone_entry in phones_df[column]:
             # Convert each entry to a string, handle floats (remove .0), and split comma-separated values
             phone_entry = str(phone_entry).replace('.0', '')  # Remove `.0` from floats
-            all_phone_numbers.extend([phone.strip() for phone in phone_entry.split(',') if phone.strip()])
+            valid_phone_pattern = re.compile(r'^\+?\d{10}$')  # A simple pattern for phone numbers (you can adjust it)
+            all_phone_numbers.extend([phone.strip() for phone in phone_entry.split(',') if phone.strip() and valid_phone_pattern.match(phone.strip())])
+            # all_phone_numbers.extend([phone.strip() for phone in phone_entry.split(',') if phone.strip()])
 
     # Create a DataFrame from the extracted phone numbers
     result_df = pd.DataFrame({'Phone Number': all_phone_numbers})
@@ -222,12 +227,12 @@ def add_rc(df: pd.DataFrame, excel_file: str, dbx):
     thirty_days_ago = pd.to_datetime('today', utc=True) - timedelta(days=30)
     df['Creation Time (UTC)'] = pd.to_datetime(df['Creation Time (UTC)'], utc=True)
     received_df = df[df['Direction'] == 'Inbound'][['From']]
-    sent_df = df[(df['Direction'] == 'Outbound') & (df['Creation Time (UTC)'] >= thirty_days_ago)][['From']]
+    sent_df = df[(df['Direction'] == 'Outbound') & (df['Creation Time (UTC)'] >= thirty_days_ago)][['To']]
     received_df['From'] = received_df['From'].str.findall(r'\d+').apply(lambda x: ''.join(x)).str[1:]
-    sent_df['From'] = sent_df['From'].str.findall(r'\d+').apply(lambda x: ''.join(x)).str[1:]
+    sent_df['To'] = sent_df['To'].str.findall(r'\d+').apply(lambda x: ''.join(x)).str[1:]
 
     received_df.drop_duplicates(subset=['From'], inplace=True)
-    sent_df.drop_duplicates(subset=['From'], inplace=True)
+    sent_df.drop_duplicates(subset=['To'], inplace=True)
 
     with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         received_df.to_excel(writer, sheet_name='RCSMS-Received', index=False, header=False)
