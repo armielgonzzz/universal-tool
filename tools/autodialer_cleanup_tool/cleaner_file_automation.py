@@ -355,7 +355,7 @@ def create_local_list_cleaner(path: str) -> None:
     df = pd.DataFrame()
 
     # Save the empty DataFrame to an Excel file
-    df.to_excel('./data/List Cleaner File.xlsx', index=False)
+    df.to_excel(path, index=False)
 
 def main(auth_code: str):
 
