@@ -15,8 +15,10 @@ load_dotenv(dotenv_path='misc/.env')
 APP_KEY = os.getenv('DROPBOX_APP_KEY')
 APP_SECRET = os.getenv('DROPBOX_APP_SECRET')
 
-def update_original_workbook(df: pd.DataFrame, sheet_name: str, excel_path: str):
-    original_df = pd.read_excel(excel_path, sheet_name=sheet_name)
+def update_original_workbook(update_df: pd.DataFrame, sheet_name: str):
+    # with pd.ExcelWriter(excel_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+    #     update_df.to_excel(writer, sheet_name=sheet_name, index=False, header=False, startrow=writer.sheets[sheet_name].max_row)
+    update_df_dict[sheet_name] = update_df
 
 def dropbox_authentication() -> str:
     auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(APP_KEY, APP_SECRET)
@@ -43,9 +45,7 @@ def read_dropbox_file(path: str, dbx):
     else:
         raise ValueError("Invalid file format: Please provide a .csv, .xlsx or .xlsb file.")
     
-def add_pd_phones(path: str, excel_file: str, dbx):
-    print("Adding Sheet ContMgt+MVP+JC+PD+RC")
-    # Drop columns that is not needed
+def add_pd_phones(path: str, dbx):
     df = read_dropbox_file(path, dbx)
     df.drop(columns=['Deal - ID', 'Deal - Last RVM Date', 'Deal - RVM Dates'],
             axis=1,
@@ -78,14 +78,16 @@ def add_pd_phones(path: str, excel_file: str, dbx):
         .str.replace(" ", "")
     
     result_df.drop_duplicates(subset=['Phone Number'], inplace=True)
-    
-    # Use ExcelWriter to append the DataFrame to the existing file
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        
-        result_df.to_excel(writer, sheet_name='ContMgt+MVP+JC+PD+RC', index=False)
 
-def add_unique_db(path: str, excel_file: str, dbx):
-    print("Adding Sheet UniqueDB ID")
+    print("Adding Sheet ContMgt+MVP+JC+PD+RC")
+    update_original_workbook(result_df, 'ContMgt+MVP+JC+PD+RC')
+    
+    # # Use ExcelWriter to append the DataFrame to the existing file
+    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        
+    #     result_df.to_excel(writer, sheet_name='ContMgt+MVP+JC+PD+RC', index=False)
+
+def add_unique_db(path: str, dbx):
     df = read_dropbox_file(path, dbx)
     # Now handle the "Deal - Unique Database ID" column similarly
     deal_column = 'Deal - Unique Database ID'
@@ -106,13 +108,15 @@ def add_unique_db(path: str, excel_file: str, dbx):
 
     deal_df.drop_duplicates(subset=['Deal - Unique Database ID'], inplace=True)
 
-    # Use ExcelWriter to append the DataFrame to the existing file
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        
-        deal_df.to_excel(writer, sheet_name='UniqueDB ID', index=False)
+    print("Adding Sheet UniqueDB ID")
+    update_original_workbook(deal_df, 'UniqueDB ID')
 
-def add_remove_list(path: str, excel_file: str, dbx):
-    print("Updating Sheet ContMgt+MVP+JC+PD+RC")
+    # # Use ExcelWriter to append the DataFrame to the existing file
+    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        
+    #     deal_df.to_excel(writer, sheet_name='UniqueDB ID', index=False)
+
+def add_remove_list(path: str, dbx):
     df = read_dropbox_file(path, dbx)
     phone_columns = [f'Person - Phone {i}' for i in range(2, 11)]
     phone_columns.extend(['Person - Phone - Work', 'Person - Phone - Home', 'Person - Phone - Mobile', 'Person - Phone - Other'])
@@ -141,26 +145,28 @@ def add_remove_list(path: str, excel_file: str, dbx):
     
     result_df.drop_duplicates(subset=['Phone Number'], inplace=True)
 
-    book = load_workbook(excel_file)
+    print("Updating Sheet ContMgt+MVP+JC+PD+RC")
+    update_original_workbook(result_df, 'ContMgt+MVP+JC+PD+RC')
 
-    # Check if the sheet exists and load it into a DataFrame
-    if 'ContMgt+MVP+JC+PD+RC' in book.sheetnames:
-        # Read the existing sheet into a DataFrame
-        existing_df = pd.read_excel(excel_file, sheet_name='ContMgt+MVP+JC+PD+RC')
+    # book = load_workbook(excel_file)
+
+    # # Check if the sheet exists and load it into a DataFrame
+    # if 'ContMgt+MVP+JC+PD+RC' in book.sheetnames:
+    #     # Read the existing sheet into a DataFrame
+    #     existing_df = pd.read_excel(excel_file, sheet_name='ContMgt+MVP+JC+PD+RC')
         
-        # Append the new rows to the existing DataFrame
-        updated_df = pd.concat([existing_df, result_df], ignore_index=True)
-    else:
-        # If the sheet doesn't exist, just use the new DataFrame
-        updated_df = result_df
+    #     # Append the new rows to the existing DataFrame
+    #     updated_df = pd.concat([existing_df, result_df], ignore_index=True)
+    # else:
+    #     # If the sheet doesn't exist, just use the new DataFrame
+    #     updated_df = result_df
 
-    # Write the updated DataFrame back to the sheet
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    # # Write the updated DataFrame back to the sheet
+    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         
-        updated_df.to_excel(writer, sheet_name='ContMgt+MVP+JC+PD+RC', index=False, header=False)
+    #     updated_df.to_excel(writer, sheet_name='ContMgt+MVP+JC+PD+RC', index=False, header=False)
 
-def add_jc(path: str, excel_file: str, dbx):
-    print("Adding Sheet JCSMS-Received")
+def add_jc(path: str, dbx):
     metadata, response = dbx.files_download(path)
     df = pd.read_excel(BytesIO(response.content),
                        sheet_name="Messages Details",
@@ -177,25 +183,32 @@ def add_jc(path: str, excel_file: str, dbx):
     received_df.drop_duplicates(subset=['Client Number'], inplace=True)
     sent_df.drop_duplicates(subset=['Client Number'], inplace=True)
 
-    # Use ExcelWriter to append the DataFrame to the existing file
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    print("Adding Sheet JCSMS-Received")
+    update_original_workbook(received_df, 'JCSMS-Received')
+
+    print("Adding Sheet JCSMS-Sent")
+    update_original_workbook(sent_df, 'JCSMS-Sent')
+
+    # # Use ExcelWriter to append the DataFrame to the existing file
+    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         
-        received_df.to_excel(writer, sheet_name='JCSMS-Received', index=False, header=False)
+    #     received_df.to_excel(writer, sheet_name='JCSMS-Received', index=False, header=False)
 
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        print("Adding Sheet JCSMS-Sent")
-        sent_df.to_excel(writer, sheet_name='JCSMS-Sent', index=False, header=False)
+    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    #     sent_df.to_excel(writer, sheet_name='JCSMS-Sent', index=False, header=False)
 
-def add_sly(path: str, excel_file: str, dbx):
-    print("Adding Sheet DNC")
+def add_sly(path: str, dbx):
     df = read_dropbox_file(path, dbx)
     df.drop_duplicates(inplace=True)
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        
-        df.to_excel(writer, sheet_name='DNC', index=False, header=False)
 
-def add_contact_center(df: pd.DataFrame, excel_file: str, dbx):
-    print("Adding Sheet ContactMgtLogs")
+    print("Adding Sheet DNC")
+    update_original_workbook(df, 'DNC')
+
+    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        
+    #     df.to_excel(writer, sheet_name='DNC', index=False, header=False)
+
+def add_contact_center(df: pd.DataFrame, dbx):
     fourteen_days_ago = pd.to_datetime('today') - timedelta(days=14)
     df['Date'] = pd.to_datetime(df['Date'])
     df = df[df['Media Type Name'] != 'E-Mail']
@@ -205,28 +218,35 @@ def add_contact_center(df: pd.DataFrame, excel_file: str, dbx):
     inbound_df.drop_duplicates(inplace=True)
     outbound_df.drop_duplicates(inplace=True)
 
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        inbound_df.to_excel(writer, sheet_name='ContactMgtLogs', index=False, header=False)
+    print("Adding Sheet ContactMgtLogs")
+    update_original_workbook(inbound_df, 'ContactMgtLogs')
 
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        print("Adding Sheet Outbound-2weeks")
-        outbound_df.to_excel(writer, sheet_name='Outbound-2weeks', index=False, header=False)
+    print("Adding Sheet Outbound-2weeks")
+    update_original_workbook(outbound_df, 'Outbound-2weeks')
 
-def add_mvp(path: str, excel_file: str, dbx):
-    print("Adding Sheet MVPLogs")
+    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    #     inbound_df.to_excel(writer, sheet_name='ContactMgtLogs', index=False, header=False)
+
+    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    #     outbound_df.to_excel(writer, sheet_name='Outbound-2weeks', index=False, header=False)
+
+def add_mvp(path: str, dbx):
     df = read_dropbox_file(path, dbx)
     df['Sender Number'] = df['Sender Number'].astype('Int64')
     valid_number_df = df[df['Sender Number'].notna()].astype(str)
     valid_number_df['Sender Number'] = valid_number_df['Sender Number'].str[1:]
     mvp_df = valid_number_df[valid_number_df['Direction'] == 'Inbound']
     final_df = mvp_df[mvp_df['Sender Number'].str.len() == 10][['Sender Number']]
-    final_df.drop_duplicates(subset=['Sender Number'], inplace=True)
-    
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        final_df.to_excel(writer, sheet_name='MVPLogs', index=False, header=False)
 
-def add_rc(df: pd.DataFrame, excel_file: str, dbx):
-    print("Adding Sheet RCSMS-Received")
+    final_df.drop_duplicates(subset=['Sender Number'], inplace=True)
+
+    print("Adding Sheet MVPLogs")
+    update_original_workbook(final_df, 'MVPLogs')
+    
+    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    #     final_df.to_excel(writer, sheet_name='MVPLogs', index=False, header=False)
+
+def add_rc(df: pd.DataFrame, dbx):
     thirty_days_ago = pd.to_datetime('today', utc=True) - timedelta(days=30)
     df['Creation Time (UTC)'] = pd.to_datetime(df['Creation Time (UTC)'], utc=True)
     received_df = df[df['Direction'] == 'Inbound'][['From']]
@@ -237,15 +257,17 @@ def add_rc(df: pd.DataFrame, excel_file: str, dbx):
     received_df.drop_duplicates(subset=['From'], inplace=True)
     sent_df.drop_duplicates(subset=['To'], inplace=True)
 
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        received_df.to_excel(writer, sheet_name='RCSMS-Received', index=False, header=False)
+    print("Adding Sheet RCSMS-Received")
+    update_original_workbook(received_df, 'RCSMS-Received')
+    
+    print("Adding Sheet RCSMS-Sent")
+    update_original_workbook(sent_df, 'RCSMS-Sent')
 
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        print("Adding Sheet RCSMS-Sent")
-        sent_df.to_excel(writer, sheet_name='RCSMS-Sent', index=False, header=False)
+    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    #     received_df.to_excel(writer, sheet_name='RCSMS-Received', index=False, header=False)
 
-    with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        pd.DataFrame().to_excel(writer, sheet_name='FromOtherList', index=False, header=False)
+    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    #     sent_df.to_excel(writer, sheet_name='RCSMS-Sent', index=False, header=False)
 
 def get_latest_file(folder_path, dbx):
     try:
@@ -268,10 +290,10 @@ def get_latest_file(folder_path, dbx):
         print(f"Error getting latest file from {folder_path}: {e}")
         return None
 
-def load_sheets(path, dbx, conversion_dict):
+def load_sheets(root_path, dbx, conversion_dict, local_list_cleaner_path):
     try:
         # List files and folders in the current path
-        response = dbx.files_list_folder(path)
+        response = dbx.files_list_folder(root_path)
         for entry in response.entries:
             if isinstance(entry, dropbox.files.FileMetadata):
                 file_path = entry.path_lower
@@ -284,10 +306,10 @@ def load_sheets(path, dbx, conversion_dict):
 
                     # Process the latest only
                     if file_path == get_latest_file(folder_path, dbx):
-                        file_type_function(file_path, './data/List Cleaner File.xlsx', dbx)
+                        file_type_function(file_path, dbx)
                         
             elif isinstance(entry, dropbox.files.FolderMetadata):
-                load_sheets(entry.path_lower, dbx, conversion_dict)
+                load_sheets(entry.path_lower, dbx, conversion_dict, local_list_cleaner_path)
 
         # Handle pagination
         while response.has_more:
@@ -304,13 +326,13 @@ def load_sheets(path, dbx, conversion_dict):
 
                         # Process the latest only
                         if file_path == get_latest_file(folder_path, dbx):
-                            file_type_function(file_path, './data/List Cleaner File.xlsx', dbx)
+                            file_type_function(file_path, dbx)
                             
                 elif isinstance(entry, dropbox.files.FolderMetadata):
-                    load_sheets(entry.path_lower, dbx, conversion_dict)
+                    load_sheets(entry.path_lower, dbx, conversion_dict, local_list_cleaner_path)
 
     except dropbox.exceptions.ApiError as e:
-        print(f"Error accessing path '{path}': {e}")
+        print(f"Error accessing path '{root_path}': {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
@@ -347,24 +369,19 @@ def concat_rc_files(path: str, dbx):
         return combined_df
 
 
-def create_local_list_cleaner(path: str) -> None:
+def create_local_list_cleaner(dropbox_path: str, local_path: str, dbx: dropbox.Dropbox) -> None:
 
     print("Creating new local list cleaner file")
-
-    # Check if the file exists and remove it
-    if os.path.exists(path):
-        os.remove(path)
-
-    df = pd.DataFrame()
-
-    # Save the empty DataFrame to an Excel file
-    df.to_excel(path, index=False)
+    metadata, response = dbx.files_download(dropbox_path)
+    
+    # Write the content to a local file
+    with open(local_path, 'wb') as f:
+        f.write(response.content)
 
 def check_user_folder_paths(dbx: dropbox.Dropbox):
     result = dbx.files_list_folder(path="", recursive=True)
     for entry in result.entries:
         if isinstance(entry, dropbox.files.FolderMetadata):
-            print(entry.path_display)
             if entry.path_display == '/List Cleaner & JC DNC':
                 return entry.path_display
                 
@@ -375,9 +392,14 @@ def main(auth_code: str):
         auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(APP_KEY, APP_SECRET)   
         oauth_result = auth_flow.finish(auth_code)
         dbx = dropbox.Dropbox(oauth_result.access_token)
+
+        root_path = check_user_folder_paths(dbx)
+        global update_df_dict
+        update_df_dict = {}
         
         # Create constant variables
-        local_list_cleaner_path = './data/List Cleaner File.xlsx'
+        local_list_cleaner_path = './data/List Cleaner.xlsx'
+        dropbox_list_cleaner_path = f'{root_path}/List Cleaner.xlsx'
         conversion_dict = {
             "jc": add_jc,
             "mvp": add_mvp,
@@ -387,24 +409,24 @@ def main(auth_code: str):
             "sly": add_sly
         }
 
-        path = check_user_folder_paths(dbx)
-
-        # Remove and create new local list cleaner file
-        create_local_list_cleaner(local_list_cleaner_path)
+        # Download and replace local list cleaner file
+        create_local_list_cleaner(dropbox_list_cleaner_path, local_list_cleaner_path, dbx)
 
         # Update the list cleaner file
-        load_sheets(path, dbx, conversion_dict)
+        load_sheets(root_path, dbx, conversion_dict, local_list_cleaner_path)
 
         # Process contact_center folder files
-        contact_center_df = concat_contact_center_files(f'{path}/contact_center', dbx)
-        add_contact_center(contact_center_df, './data/List Cleaner File.xlsx', dbx)
+        contact_center_df = concat_contact_center_files(f'{root_path}/contact_center', dbx)
+        add_contact_center(contact_center_df, dbx)
 
         # Process rc folder files
-        rc_df = concat_rc_files(f'{path}/rc', dbx)
-        add_rc(rc_df, './data/List Cleaner File.xlsx', dbx)
+        rc_df = concat_rc_files(f'{root_path}/rc', dbx)
+        add_rc(rc_df, dbx)
 
-        # Upload to dropbox
-        export_to_dropbox(local_list_cleaner_path, dbx)
+        print(update_df_dict)
+
+        # # Upload to dropbox
+        # export_to_dropbox(local_list_cleaner_path, dbx)
     
     except Exception as e:
         print(f"An error occured: {e}")
