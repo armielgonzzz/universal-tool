@@ -16,6 +16,7 @@ APP_KEY = os.getenv('DROPBOX_APP_KEY')
 APP_SECRET = os.getenv('DROPBOX_APP_SECRET')
 
 def append_to_multiple_sheets(updates: dict[str, pd.DataFrame], excel_path: str):
+    print("Saving all sheets")
     workbook = load_workbook(excel_path)
     for sheet_name, update_df in updates.items():
         if sheet_name not in workbook.sheetnames:
@@ -436,6 +437,9 @@ def main(auth_code: str):
         # Process rc folder files
         rc_df = concat_rc_files(f'{root_path}/rc', dbx)
         add_rc(rc_df, dbx)
+
+        # Save all new sheets locally
+        append_to_multiple_sheets(update_df_dict, local_list_cleaner_path)
 
         # # Upload to dropbox
         # export_to_dropbox(local_list_cleaner_path, dbx)
