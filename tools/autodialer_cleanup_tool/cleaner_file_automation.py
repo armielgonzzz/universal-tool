@@ -15,9 +15,23 @@ load_dotenv(dotenv_path='misc/.env')
 APP_KEY = os.getenv('DROPBOX_APP_KEY')
 APP_SECRET = os.getenv('DROPBOX_APP_SECRET')
 
-def update_original_workbook(update_df: pd.DataFrame, sheet_name: str):
-    # with pd.ExcelWriter(excel_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
-    #     update_df.to_excel(writer, sheet_name=sheet_name, index=False, header=False, startrow=writer.sheets[sheet_name].max_row)
+def append_to_multiple_sheets(updates: dict[str, pd.DataFrame], excel_path: str):
+    workbook = load_workbook(excel_path)
+    for sheet_name, update_df in updates.items():
+        if sheet_name not in workbook.sheetnames:
+            raise ValueError(f"Sheet '{sheet_name}' does not exist in the workbook.")
+
+        # Get corresponding sheet
+        sheet = workbook[sheet_name]
+
+        # Append each DataFrame row to the sheet
+        for row in update_df.itertuples(index=False, name=None):
+            sheet.append(row)
+
+    # Save the workbook after processing all sheets
+    workbook.save(excel_path)
+
+def get_update_df(update_df: pd.DataFrame, sheet_name: str):
     update_df_dict[sheet_name] = update_df
 
 def dropbox_authentication() -> str:
@@ -80,7 +94,7 @@ def add_pd_phones(path: str, dbx):
     result_df.drop_duplicates(subset=['Phone Number'], inplace=True)
 
     print("Adding Sheet ContMgt+MVP+JC+PD+RC")
-    update_original_workbook(result_df, 'ContMgt+MVP+JC+PD+RC')
+    get_update_df(result_df, 'ContMgt+MVP+JC+PD+RC')
     
     # # Use ExcelWriter to append the DataFrame to the existing file
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -109,7 +123,7 @@ def add_unique_db(path: str, dbx):
     deal_df.drop_duplicates(subset=['Deal - Unique Database ID'], inplace=True)
 
     print("Adding Sheet UniqueDB ID")
-    update_original_workbook(deal_df, 'UniqueDB ID')
+    get_update_df(deal_df, 'UniqueDB ID')
 
     # # Use ExcelWriter to append the DataFrame to the existing file
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -146,7 +160,7 @@ def add_remove_list(path: str, dbx):
     result_df.drop_duplicates(subset=['Phone Number'], inplace=True)
 
     print("Updating Sheet ContMgt+MVP+JC+PD+RC")
-    update_original_workbook(result_df, 'ContMgt+MVP+JC+PD+RC')
+    get_update_df(result_df, 'ContMgt+MVP+JC+PD+RC')
 
     # book = load_workbook(excel_file)
 
@@ -184,10 +198,10 @@ def add_jc(path: str, dbx):
     sent_df.drop_duplicates(subset=['Client Number'], inplace=True)
 
     print("Adding Sheet JCSMS-Received")
-    update_original_workbook(received_df, 'JCSMS-Received')
+    get_update_df(received_df, 'JCSMS-Received')
 
     print("Adding Sheet JCSMS-Sent")
-    update_original_workbook(sent_df, 'JCSMS-Sent')
+    get_update_df(sent_df, 'JCSMS-Sent')
 
     # # Use ExcelWriter to append the DataFrame to the existing file
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -202,7 +216,7 @@ def add_sly(path: str, dbx):
     df.drop_duplicates(inplace=True)
 
     print("Adding Sheet DNC")
-    update_original_workbook(df, 'DNC')
+    get_update_df(df, 'DNC')
 
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         
@@ -219,10 +233,10 @@ def add_contact_center(df: pd.DataFrame, dbx):
     outbound_df.drop_duplicates(inplace=True)
 
     print("Adding Sheet ContactMgtLogs")
-    update_original_workbook(inbound_df, 'ContactMgtLogs')
+    get_update_df(inbound_df, 'ContactMgtLogs')
 
     print("Adding Sheet Outbound-2weeks")
-    update_original_workbook(outbound_df, 'Outbound-2weeks')
+    get_update_df(outbound_df, 'Outbound-2weeks')
 
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
     #     inbound_df.to_excel(writer, sheet_name='ContactMgtLogs', index=False, header=False)
@@ -241,7 +255,7 @@ def add_mvp(path: str, dbx):
     final_df.drop_duplicates(subset=['Sender Number'], inplace=True)
 
     print("Adding Sheet MVPLogs")
-    update_original_workbook(final_df, 'MVPLogs')
+    get_update_df(final_df, 'MVPLogs')
     
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
     #     final_df.to_excel(writer, sheet_name='MVPLogs', index=False, header=False)
@@ -258,10 +272,10 @@ def add_rc(df: pd.DataFrame, dbx):
     sent_df.drop_duplicates(subset=['To'], inplace=True)
 
     print("Adding Sheet RCSMS-Received")
-    update_original_workbook(received_df, 'RCSMS-Received')
+    get_update_df(received_df, 'RCSMS-Received')
     
     print("Adding Sheet RCSMS-Sent")
-    update_original_workbook(sent_df, 'RCSMS-Sent')
+    get_update_df(sent_df, 'RCSMS-Sent')
 
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
     #     received_df.to_excel(writer, sheet_name='RCSMS-Received', index=False, header=False)
@@ -422,8 +436,6 @@ def main(auth_code: str):
         # Process rc folder files
         rc_df = concat_rc_files(f'{root_path}/rc', dbx)
         add_rc(rc_df, dbx)
-
-        print(update_df_dict)
 
         # # Upload to dropbox
         # export_to_dropbox(local_list_cleaner_path, dbx)
