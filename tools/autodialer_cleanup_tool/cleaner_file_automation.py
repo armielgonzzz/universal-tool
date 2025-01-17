@@ -357,6 +357,15 @@ def create_local_list_cleaner(path: str) -> None:
     # Save the empty DataFrame to an Excel file
     df.to_excel(path, index=False)
 
+def check_user_folder_paths(dbx: dropbox.Dropbox):
+    result = dbx.files_list_folder(path="", recursive=True)
+    for entry in result.entries:
+        if isinstance(entry, dropbox.files.FolderMetadata):
+            print(entry.path_display)
+            if entry.path_display == '/List Cleaner & JC DNC':
+                return entry.path_display
+                
+
 def main(auth_code: str):
 
     try:
@@ -366,7 +375,6 @@ def main(auth_code: str):
         
         # Create constant variables
         local_list_cleaner_path = './data/List Cleaner File.xlsx'
-        shared_folder_path = "/list cleaner & jc dnc"
         conversion_dict = {
             "jc": add_jc,
             "mvp": add_mvp,
@@ -376,18 +384,20 @@ def main(auth_code: str):
             "sly": add_sly
         }
 
+        path = check_user_folder_paths(dbx)
+
         # Remove and create new local list cleaner file
         create_local_list_cleaner(local_list_cleaner_path)
 
         # Update the list cleaner file
-        load_sheets(shared_folder_path, dbx, conversion_dict)
+        load_sheets(path, dbx, conversion_dict)
 
         # Process contact_center folder files
-        contact_center_df = concat_contact_center_files('/list cleaner & jc dnc/contact_center', dbx)
+        contact_center_df = concat_contact_center_files(f'{path}/contact_center', dbx)
         add_contact_center(contact_center_df, './data/List Cleaner File.xlsx', dbx)
 
         # Process rc folder files
-        rc_df = concat_rc_files('/list cleaner & jc dnc/rc', dbx)
+        rc_df = concat_rc_files(f'{path}/rc', dbx)
         add_rc(rc_df, './data/List Cleaner File.xlsx', dbx)
 
         # Upload to dropbox
