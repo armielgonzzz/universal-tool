@@ -15,6 +15,9 @@ load_dotenv(dotenv_path='misc/.env')
 APP_KEY = os.getenv('DROPBOX_APP_KEY')
 APP_SECRET = os.getenv('DROPBOX_APP_SECRET')
 
+def update_original_workbook(df: pd.DataFrame, sheet_name: str, excel_path: str):
+    original_df = pd.read_excel(excel_path, sheet_name=sheet_name)
+
 def dropbox_authentication() -> str:
     auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(APP_KEY, APP_SECRET)
     authorize_url = auth_flow.start()
