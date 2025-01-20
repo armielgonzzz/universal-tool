@@ -3,7 +3,6 @@ import os
 import pandas as pd
 import warnings
 import dropbox
-import datetime
 import webbrowser
 from datetime import timedelta
 from dotenv import load_dotenv
@@ -42,9 +41,9 @@ def dropbox_authentication() -> str:
     if authorize_url:
         webbrowser.open(authorize_url)
 
-def export_to_dropbox(list_cleaner_file_path, dbx) -> None:
-    datetime_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    list_cleaner_dropbox_path = f'/list cleaner & jc dnc/list_cleaner_file/{datetime_now} - List Cleaner File.xlsx'
+def export_to_dropbox(list_cleaner_file_path, dbx, list_cleaner_dropbox_path) -> None:
+    # datetime_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    # list_cleaner_dropbox_path = f'/list cleaner & jc dnc/list_cleaner_file/{datetime_now} - List Cleaner File.xlsx'
     with open(list_cleaner_file_path, 'rb') as f:
         print("Uploading to List Cleaner File to Dropbox")
         dbx.files_upload(f.read(), list_cleaner_dropbox_path, mode=dropbox.files.WriteMode.overwrite)
@@ -245,8 +244,7 @@ def add_contact_center(df: pd.DataFrame, dbx):
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
     #     outbound_df.to_excel(writer, sheet_name='Outbound-2weeks', index=False, header=False)
 
-def add_mvp(path: str, dbx):
-    df = read_dropbox_file(path, dbx)
+def add_mvp(df: pd.DataFrame, dbx):
     df['Sender Number'] = df['Sender Number'].astype('Int64')
     valid_number_df = df[df['Sender Number'].notna()].astype(str)
     valid_number_df['Sender Number'] = valid_number_df['Sender Number'].str[1:]
@@ -383,6 +381,21 @@ def concat_rc_files(path: str, dbx):
         combined_df = pd.concat(df_list)
         return combined_df
 
+def concat_mvp_files(path: str, dbx):
+
+    result = dbx.files_list_folder(path)
+    mvp_files = result.entries
+    df_list = []
+
+    for file in mvp_files:
+        if isinstance(file, dropbox.files.FileMetadata):
+            file_path = file.path_lower
+            df = read_dropbox_file(file_path, dbx)
+            df_list.append(df)
+    
+    if df_list:
+        combined_df = pd.concat(df_list)
+        return combined_df
 
 def create_local_list_cleaner(dropbox_path: str, local_path: str, dbx: dropbox.Dropbox) -> None:
 
@@ -417,7 +430,6 @@ def main(auth_code: str):
         dropbox_list_cleaner_path = f'{root_path}/List Cleaner.xlsx'
         conversion_dict = {
             "jc": add_jc,
-            "mvp": add_mvp,
             "pd_db": add_unique_db,
             "pd_phone": add_pd_phones,
             "pd_remove": add_remove_list,
@@ -438,11 +450,15 @@ def main(auth_code: str):
         rc_df = concat_rc_files(f'{root_path}/rc', dbx)
         add_rc(rc_df, dbx)
 
+        # Process mvp folder files
+        mvp_df = concat_mvp_files(f'{root_path}/mvp', dbx)
+        add_mvp(mvp_df, dbx)
+
         # Save all new sheets locally
         append_to_multiple_sheets(update_df_dict, local_list_cleaner_path)
 
         # # Upload to dropbox
-        # export_to_dropbox(local_list_cleaner_path, dbx)
+        # export_to_dropbox(local_list_cleaner_path, dbx, dropbox_list_cleaner_path)
     
     except Exception as e:
         print(f"An error occured: {e}")
