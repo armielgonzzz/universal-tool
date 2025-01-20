@@ -4,6 +4,7 @@ import pandas as pd
 import warnings
 import dropbox
 import webbrowser
+import customtkinter as ctk
 from datetime import timedelta
 from dotenv import load_dotenv
 from io import BytesIO
@@ -41,13 +42,10 @@ def dropbox_authentication() -> str:
     if authorize_url:
         webbrowser.open(authorize_url)
 
-def export_to_dropbox(list_cleaner_file_path, dbx, list_cleaner_dropbox_path) -> None:
-    # datetime_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    # list_cleaner_dropbox_path = f'/list cleaner & jc dnc/list_cleaner_file/{datetime_now} - List Cleaner File.xlsx'
+def export_to_dropbox(list_cleaner_file_path, dbx, dropbox_list_cleaner_path) -> None:
     with open(list_cleaner_file_path, 'rb') as f:
         print("Uploading to List Cleaner File to Dropbox")
-        dbx.files_upload(f.read(), list_cleaner_dropbox_path, mode=dropbox.files.WriteMode.overwrite)
-    
+        dbx.files_upload(f.read(), dropbox_list_cleaner_path, mode=dropbox.files.WriteMode.overwrite)
     print("Sucessfully uploaded Updated List Cleaner File to Dropbox")
 
 def read_dropbox_file(path: str, dbx):
@@ -412,14 +410,16 @@ def check_user_folder_paths(dbx: dropbox.Dropbox):
         if isinstance(entry, dropbox.files.FolderMetadata):
             if entry.path_display == '/List Cleaner & JC DNC':
                 return entry.path_display
-                
+            
+def update_latest_cleaner_file_label(app_window: ctk.CTkFrame, dbx: dropbox.Dropbox):
+    metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/List Cleaner.xlsx')
+    last_modified_date = metadata.client_modified
+    app_window.last_update_label.configure(text=f'List cleaner file last update: {last_modified_date}')
 
-def main(auth_code: str):
+def main(auth_code: str, app_window: ctk.CTkFrame):
 
     try:
-        auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(APP_KEY, APP_SECRET)   
-        oauth_result = auth_flow.finish(auth_code)
-        dbx = dropbox.Dropbox(oauth_result.access_token)
+        dbx = dropbox.Dropbox(auth_code)
 
         root_path = check_user_folder_paths(dbx)
         global update_df_dict
@@ -457,8 +457,11 @@ def main(auth_code: str):
         # Save all new sheets locally
         append_to_multiple_sheets(update_df_dict, local_list_cleaner_path)
 
-        # # Upload to dropbox
-        # export_to_dropbox(local_list_cleaner_path, dbx, dropbox_list_cleaner_path)
+        # Upload to dropbox
+        export_to_dropbox(local_list_cleaner_path, dbx, dropbox_list_cleaner_path)
+
+        # Update label
+        update_latest_cleaner_file_label(app_window, dbx)
     
     except Exception as e:
         print(f"An error occured: {e}")

@@ -2,6 +2,8 @@ import os
 import re
 import pandas as pd
 import warnings
+import dropbox
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from urllib.parse import quote
 
@@ -46,6 +48,12 @@ FROM
 WHERE
     date_rank = 1;
 """
+
+def extract_list_cleaner_file(auth_code: str, local_path: str, dropbox_path: str):
+    dbx = dropbox.Dropbox(auth_code)
+    metadata, response = dbx.files_download(dropbox_path)
+    with open(local_path, 'wb') as f:
+        f.write(response.content)
 
 def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]':
 
@@ -191,14 +199,18 @@ def get_id_set(cleaner_file: str) -> set:
     valid_id_set = set(valid_numbers)
     return valid_id_set
 
-def main(cleaner_file: str, list_files: tuple, save_path: str):
+def main(auth_code: str, list_files: tuple, save_path: str):
 
     try:
         
         print("Preparing List Cleaner")
+        local_list_cleaner_path = './data/List Cleaner.xlsx'
+        dropbox_list_cleaner_path = '/List Cleaner & JC DNC/List Cleaner.xlsx'
 
-        valid_phone_set = get_phone_set(cleaner_file)
-        valid_id_set = get_id_set(cleaner_file)
+        extract_list_cleaner_file(auth_code, local_list_cleaner_path, dropbox_list_cleaner_path)
+
+        valid_phone_set = get_phone_set(local_list_cleaner_path)
+        valid_id_set = get_id_set(local_list_cleaner_path)
         disposition_set, months_set = read_cm_live_db()
         
         for list_file in list_files:

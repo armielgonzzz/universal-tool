@@ -2,6 +2,8 @@ import os
 import customtkinter as ctk
 import threading
 import webbrowser
+import dropbox
+from dotenv import load_dotenv
 from customtkinter import filedialog
 from tools.text_inactive_tool.text_inactive import main as run_text_inactive
 from tools.phone_cleanup_tool.clean_up import main as run_clean_up
@@ -688,12 +690,16 @@ class AutoDialerCleaner(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent)
 
+        load_dotenv(dotenv_path='misc/.env')
+        self.APP_KEY = os.getenv('DROPBOX_APP_KEY')
+        self.APP_SECRET = os.getenv('DROPBOX_APP_SECRET')
         self.controller = controller
         self.controller.input_file_check = False
         self.controller.save_path_check = False
-        self.cleaner_file = False
         self.files_to_clean = False
         self.save_path = False
+        self.auth_code = None
+        self.user_input = None
         self.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(8, weight=1)
@@ -707,17 +713,17 @@ class AutoDialerCleaner(ctk.CTkFrame):
         label.grid(row=0, column=0, padx=10, pady=(10,0), sticky='nsew')
 
         update_cleaner_button = ctk.CTkButton(self,
+                                              text="Authenticate Dropbox",
+                                              fg_color='#5b5c5c',
+                                              hover_color='#424343',
+                                              command=lambda:self.authenticate_dropbox(self))
+        update_cleaner_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
+
+        update_cleaner_button = ctk.CTkButton(self,
                                             text="Update list cleaner file",
                                             fg_color='#5b5c5c',
                                             hover_color='#424343',
                                             command=lambda:self.update_list_cleaner())
-        update_cleaner_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
-
-        update_cleaner_button = ctk.CTkButton(self,
-                                              text="Select list cleaner file",
-                                              fg_color='#5b5c5c',
-                                              hover_color='#424343',
-                                              command=lambda:self.select_cleaner_file(self))
         update_cleaner_button.grid(row=2, column=0, padx=5, pady=5, sticky="ns")
 
         list_button = ctk.CTkButton(self,
@@ -733,17 +739,86 @@ class AutoDialerCleaner(ctk.CTkFrame):
                                     hover_color='#424343',
                                     command=lambda:self.select_save_path(self))
         list_button.grid(row=6, column=0, padx=5, pady=5, sticky="ns")
-    
-    def select_cleaner_file(self, window):
 
-        self.cleaner_file = filedialog.askopenfilename(title="Select list cleaner file",
-                                                        filetypes=[("All Files", "*.*")])
-        if self.cleaner_file:
-            cleaner_file_label = ctk.CTkLabel(window,
-                                              text=f"{os.path.basename(self.cleaner_file)}",
-                                              fg_color="transparent")
-            cleaner_file_label.grid(row=3, column=0, padx=5, pady=5)
-            self.check_run()
+        self.last_update_label = ctk.CTkLabel(self,
+                                              text=None,
+                                              fg_color='transparent')
+        self.last_update_label.grid(row=9, column=0, padx=5, pady=5, sticky="nsew")
+
+    def get_latest_update(self, auth_code):
+
+        auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(self.APP_KEY, self.APP_SECRET)   
+        oauth_result = auth_flow.finish(auth_code)
+        if oauth_result.access_token:
+            self.auth_code = oauth_result.access_token
+            dbx = dropbox.Dropbox(oauth_result.access_token)
+            metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/List Cleaner.xlsx')
+            last_modified_date = metadata.client_modified
+            self.last_update_label.configure(text=f'List cleaner file last update: {last_modified_date}')
+    
+    def authentication_result_window(self):
+        authentication_result = ctk.CTkToplevel()
+        authentication_result.resizable(False, False)
+        authentication_result.geometry("400x200")
+        authentication_result.grid_rowconfigure(0, weight=1)
+        authentication_result.grid_columnconfigure(0, weight=1)
+        authentication_result.attributes('-topmost', True)
+        authentication_result.title("Run Tool")
+
+        tool_run_label = ctk.CTkLabel(authentication_result,
+                                      text="SUCCESSFULLY Authenticated Dropbox Code" if self.auth_code else "Authentication FAILED",
+                                      wraplength=300,
+                                      font=ctk.CTkFont(
+                                          size=14,
+                                          weight='normal'))
+        tool_run_label.grid(row=0, column=0, padx=10, pady=(15, 5), sticky="nsew")
+        tool_run_button = ctk.CTkButton(authentication_result,
+                                        text="OK",
+                                        fg_color='#5b5c5c',
+                                        hover_color='#424343',
+                                        command=lambda:authentication_result.destroy())
+        tool_run_button.grid(row=1, column=0, padx=10, pady=(5, 15))
+
+
+    def authenticate_dropbox(self, tool_window):
+        def submit_action(window, tool_window):
+            user_input = input_field.get()
+            if user_input:
+                self.user_input = user_input
+                self.get_latest_update(self.user_input)
+                window.destroy()
+                self.authentication_result_window()
+                self.check_run()
+
+        # Create the authentication frame (a new top-level window)
+        authentication_frame = ctk.CTkToplevel(self)
+        authentication_frame.resizable(False, False)
+        authentication_frame.geometry("470x180")
+        authentication_frame.grid_columnconfigure(0, weight=1)
+        authentication_frame.grid_rowconfigure((2), weight=1)  # Adjust grid row configuration
+        authentication_frame.attributes('-topmost', True)
+        authentication_frame.title("Dropbox Authentication")
+
+        # Button to open authentication link
+        open_link = ctk.CTkButton(authentication_frame,
+                                text="Open Authentication Link",
+                                fg_color='#5b5c5c',
+                                hover_color='#424343',
+                                command=lambda: dropbox_authentication())
+        open_link.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+
+        input_field = ctk.CTkEntry(authentication_frame, placeholder_text="Enter the value here")
+        input_field.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
+
+        submit_button = ctk.CTkButton(authentication_frame,
+                                      text="Submit",
+                                      fg_color='#d99125',
+                                      hover_color='#ae741e',
+                                      text_color='#141414',
+                                      corner_radius=50,
+                                      font=ctk.CTkFont(size=18, weight='bold'),
+                                      command=lambda: submit_action(authentication_frame, tool_window))
+        submit_button.grid(row=2, column=0, padx=10, pady=20, sticky='nsew')
 
     def select_files_to_clean(self, window):
 
@@ -774,7 +849,7 @@ class AutoDialerCleaner(ctk.CTkFrame):
             self.check_run()
 
     def check_run(self):
-        if self.cleaner_file and self.files_to_clean and self.save_path:
+        if self.auth_code and self.files_to_clean and self.save_path:
             run_tool_button = ctk.CTkButton(self,
                                             text='RUN TOOL',
                                             height=36,
@@ -785,50 +860,14 @@ class AutoDialerCleaner(ctk.CTkFrame):
                                             corner_radius=50,
                                             font=ctk.CTkFont(size=18, weight='bold'),
                                             command=lambda:self.controller.trigger_tool(run_autodialer,
-                                                                                        self.cleaner_file,
+                                                                                        self.auth_code,
                                                                                         self.files_to_clean,
                                                                                         self.save_path))
             run_tool_button.grid(row=8, column=0, padx=10, pady=5)
 
     def update_list_cleaner(self):
-
-        def submit_action(window):
-            user_input = input_field.get()
-            if user_input:
-                window.destroy()
-                self.controller.trigger_tool(update_list_cleaner_file, user_input)
-                
-
-        # Create the authentication frame (a new top-level window)
-        authentication_frame = ctk.CTkToplevel(self)
-        authentication_frame.resizable(False, False)
-        authentication_frame.geometry("470x180")
-        authentication_frame.grid_columnconfigure(0, weight=1)
-        authentication_frame.grid_rowconfigure((2), weight=1)  # Adjust grid row configuration
-        authentication_frame.attributes('-topmost', True)
-        authentication_frame.title("Dropbox Authentication")
-
-        # Button to open authentication link
-        open_link = ctk.CTkButton(authentication_frame,
-                                text="Open Authentication Link",
-                                fg_color='#5b5c5c',
-                                hover_color='#424343',
-                                command=lambda: dropbox_authentication())
-        open_link.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
-
-        input_field = ctk.CTkEntry(authentication_frame, placeholder_text="Enter the value here")
-        input_field.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
-
-        submit_button = ctk.CTkButton(authentication_frame,
-                                      text="Update List Cleaner",
-                                      fg_color='#d99125',
-                                      hover_color='#ae741e',
-                                      text_color='#141414',
-                                      corner_radius=50,
-                                      font=ctk.CTkFont(size=18, weight='bold'),
-                                      command=lambda: submit_action(authentication_frame))
-        submit_button.grid(row=2, column=0, padx=10, pady=20, sticky='nsew')
-
+        if self.auth_code:
+            self.controller.trigger_tool(update_list_cleaner_file, self.auth_code, self)
 
 
 class MissingDealsText(ctk.CTkFrame):
