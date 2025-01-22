@@ -2,10 +2,12 @@ import os
 import re
 import pandas as pd
 import sqlite3
-from rapidfuzz.fuzz import ratio
 import warnings
+from rapidfuzz.fuzz import ratio
+from .well_name_matching import main as well_name_match
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
+pd.options.mode.chained_assignment = None
 
 def read_file(path: str) -> pd.DataFrame:
     if path.lower().endswith('.csv'):
@@ -31,7 +33,7 @@ def get_well_df(db_path: str) -> pd.DataFrame:
         grouped_df = not_empty_rrc_df.groupby('rrc').agg(
             lambda x: ' | '.join(set(str(v) if v is not None else '' for v in x))
         )
-        return grouped_df
+        return grouped_df, wells_df
     
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
@@ -100,6 +102,9 @@ def extract_well_number(value):
     elif "#" in value:
         hash_split = value.split("#")[-1].strip()
         return extract_well_number(hash_split)
+    elif "-" in value:
+        dash_split = value.split("-")[-1].strip()
+        return extract_well_number(dash_split)
     elif " " in value:
         space_split_last = value.split(" ")[-1].strip()
         space_split_first = value.split(" ")[0].strip()
@@ -228,21 +233,19 @@ def apply_all_filters(df: pd.DataFrame):
     # Format all notes
     with_db_match_df['Notes'] = with_db_match_df.apply(add_all_notes, axis=1)
 
-    return with_db_match_df
-
-def format_file_and_export(df: pd.DataFrame, file_path: str, save_path: str):
-    df.rename(columns={
-        'id': 'Well ID',
-        'api10': 'API10',
-        'api14': 'API14',
-        'well_status': 'Well Status',
-        'well_name': 'DI Well Name',
-        'well_number': 'DI Well Number',
-        'lease_name': 'Lease Name',
-        'operator': 'DI Operator Name',
-        'well_name_number': 'Well Name & Number'}, inplace=True)
+    # Rename and drop columns
+    with_db_match_df.rename(columns={
+            'id': 'Well ID',
+            'api10': 'API10',
+            'api14': 'API14',
+            'well_status': 'Well Status',
+            'well_name': 'DI Well Name',
+            'well_number': 'DI Well Number',
+            'lease_name': 'Lease Name',
+            'operator': 'DI Operator Name',
+            'well_name_number': 'Well Name & Number'}, inplace=True)
     
-    df.drop(columns=['similarity',
+    with_db_match_df.drop(columns=['similarity',
                     'mh_county',
                     'mh_state',
                     'raw_well_number',
@@ -252,9 +255,11 @@ def format_file_and_export(df: pd.DataFrame, file_path: str, save_path: str):
                     'db_match'],
             axis=1,
             inplace=True)
-    
-    filename = os.path.basename(file_path)
 
+    return with_db_match_df
+
+def format_file_and_export(df: pd.DataFrame, file_path: str, save_path: str):
+    filename = os.path.basename(file_path)
     if filename.endswith('.csv'):
         df.to_csv(f"{save_path}/(With Tagging) {filename}", index=False)
     elif filename.endswith('.xlsx'):
@@ -265,7 +270,7 @@ def format_file_and_export(df: pd.DataFrame, file_path: str, save_path: str):
     
 def main(db_file_path: str, file_paths: tuple, save_path: str):
     try:
-        grouped_df = get_well_df(db_file_path)
+        grouped_df, wells_df = get_well_df(db_file_path)
 
         for file in file_paths:
 
@@ -273,6 +278,10 @@ def main(db_file_path: str, file_paths: tuple, save_path: str):
 
             # Read and format input file
             df = read_file(file)
+
+            # Match by well name and well number
+            well_name_matched_df = well_name_match(wells_df, df)
+
             df['RRC'] = df.apply(format_rrc, axis=1)
             df['RRC'] = df['RRC'].astype('Int64')
 
@@ -285,8 +294,11 @@ def main(db_file_path: str, file_paths: tuple, save_path: str):
             # Apply all filters
             filtered_df = apply_all_filters(cleaned_df)
 
+            # Add RRC Matched rows to Well Name Matched dataframe
+            well_name_matched_df.loc[well_name_matched_df['Well ID'].isna(), :] = filtered_df.loc[well_name_matched_df['Well ID'].isna(), :].values
+
             # Fomart output file and export
-            format_file_and_export(filtered_df, file, save_path)
+            format_file_and_export(well_name_matched_df, file, save_path)
 
     except Exception as e:
         print(f"An error occurred: {e}")
