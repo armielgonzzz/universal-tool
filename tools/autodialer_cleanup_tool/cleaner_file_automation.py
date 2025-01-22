@@ -51,7 +51,7 @@ def export_to_dropbox(list_cleaner_file_path, dbx, dropbox_list_cleaner_path) ->
 def read_dropbox_file(path: str, dbx):
     metadata, response = dbx.files_download(path)
     if path.endswith('.csv'):
-        return pd.read_csv(BytesIO(response.content), low_memory=False)
+        return pd.read_csv(BytesIO(response.content), low_memory=False, encoding_errors='replace')
     elif path.endswith('.xlsx'):
         return pd.read_excel(BytesIO(response.content))
     else:
@@ -221,8 +221,8 @@ def add_sly(path: str, dbx):
     #     df.to_excel(writer, sheet_name='DNC', index=False, header=False)
 
 def add_contact_center(df: pd.DataFrame, dbx):
-    fourteen_days_ago = pd.to_datetime('today') - timedelta(days=14)
-    df['Date'] = pd.to_datetime(df['Date'])
+    fourteen_days_ago = pd.to_datetime('today', format='mixed', dayfirst=False) - timedelta(days=14)
+    df['Date'] = pd.to_datetime(df['Date'], format='mixed', dayfirst=False)
     df = df[df['Media Type Name'] != 'E-Mail']
     inbound_df = df[df['Skill Direction'] == 'Inbound'][['ANI/From']]
     outbound_df = df[(df['Skill Direction'] == 'Outbound') & (df['Date'] >= fourteen_days_ago)][['DNIS/To']]
@@ -258,12 +258,18 @@ def add_mvp(df: pd.DataFrame, dbx):
     #     final_df.to_excel(writer, sheet_name='MVPLogs', index=False, header=False)
 
 def add_rc(df: pd.DataFrame, dbx):
-    thirty_days_ago = pd.to_datetime('today', utc=True) - timedelta(days=30)
-    df['Creation Time (UTC)'] = pd.to_datetime(df['Creation Time (UTC)'], utc=True)
+    thirty_days_ago = pd.to_datetime('today', utc=True, format='mixed', dayfirst=False) - timedelta(days=30)
+    df['Creation Time (UTC)'] = pd.to_datetime(df['Creation Time (UTC)'], utc=True, format='mixed', dayfirst=False)
     received_df = df[df['Direction'] == 'Inbound'][['From']]
     sent_df = df[(df['Direction'] == 'Outbound') & (df['Creation Time (UTC)'] >= thirty_days_ago)][['To']]
-    received_df['From'] = received_df['From'].str.findall(r'\d+').apply(lambda x: ''.join(x)).str[1:]
-    sent_df['To'] = sent_df['To'].str.findall(r'\d+').apply(lambda x: ''.join(x)).str[1:]
+    received_df['From'] = received_df['From'].apply(
+        lambda x: ''.join(filter(str.isdigit, str(x))) if pd.notna(x) else x
+    ).str[1:]
+
+    sent_df['To'] = sent_df['To'].apply(
+        lambda x: ''.join(filter(str.isdigit, str(x))) if pd.notna(x) else x
+    ).str[1:]
+
 
     received_df.drop_duplicates(subset=['From'], inplace=True)
     sent_df.drop_duplicates(subset=['To'], inplace=True)
