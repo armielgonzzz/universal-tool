@@ -14,7 +14,7 @@ from tools.missing_deals_tool.lookup import main as run_missing_deals_lookup
 from tools.marketing_cleanup_tool.marketing_clean_up import main as run_marketing_cleanup
 from tools.autodialer_cleanup_tool.cleaner_file_automation import dropbox_authentication
 from tools.autodialer_cleanup_tool.cleaner_file_automation import main as update_list_cleaner_file
-from tools.well_matching_tool.well_matching import main as run_well_matching_tool
+from tools.well_matching_tool.well_name_matching import main as run_well_matching_tool
 
 
 # Outside function that will center a new pop up window relative to the main window
@@ -1099,7 +1099,7 @@ class WellMatchingTool(ctk.CTkFrame):
         select_db_file_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
 
         list_button = ctk.CTkButton(self,
-                                    text="Select files to clean",
+                                    text="Select files to process",
                                     fg_color='#5b5c5c',
                                     hover_color='#424343',
                                     command=lambda:self.select_files_to_clean(self))

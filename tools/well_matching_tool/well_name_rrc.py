@@ -1,39 +1,10 @@
-import os
 import re
 import pandas as pd
-import sqlite3
-import warnings
 from rapidfuzz.fuzz import ratio
-from .well_name_rrc import main as well_name_rrc_match
+import warnings
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 pd.options.mode.chained_assignment = None
-
-def read_file(path: str) -> pd.DataFrame:
-    if path.lower().endswith('.csv'):
-        return pd.read_csv(path, low_memory=False)
-    elif path.lower().endswith('.xlsx'):
-        return pd.read_excel(path)
-    else:
-        raise RuntimeError('Invalid file type')
-
-def get_well_df(db_path: str) -> pd.DataFrame:
-    try:
-        # Establish connection to SQLite database
-        print("Extracting DB Browser Data")
-        connection = sqlite3.connect(db_path)
-        query = "SELECT * FROM wells"
-        wells_df = pd.read_sql_query(query, connection)
-        wells_df['rrc'] = wells_df['rrc'].astype('Int64')
-        wells_df['well_name_number'] = wells_df.apply(lambda row: f"{row['well_name']} {row['well_number']}", axis=1)
-        return wells_df
-    
-    except sqlite3.Error as e:
-        print(f"An error occurred: {e}")
-    finally:
-        # Close the database connection
-        if connection:
-            connection.close()
 
 def format_rrc(row: pd.Series):
     if isinstance(row['RRC'], str) and "#" in row['RRC']:
@@ -246,8 +217,9 @@ def clean_di_file(well_df: pd.DataFrame):
 
 def merge_and_filter(exploded_df: pd.DataFrame, well_name_search_df: pd.DataFrame, orig_df: pd.DataFrame):
     merged_df = exploded_df.merge(well_name_search_df,
-                                on='clean_combined_name',
-                                how='left')
+                                  left_on=['clean_combined_name', 'RRC'],
+                                  right_on=['clean_combined_name', 'rrc'],
+                                  how='left')
     filtered_df = merged_df[merged_df['id'].notna()]
     filtered_df['id'] = filtered_df['id'].astype(int)
     filtered_df['api10'] = filtered_df['api10'].astype(int)
@@ -355,92 +327,68 @@ def apply_first_filters(df: pd.DataFrame):
 
     return df
     
-def format_file_and_export(df: pd.DataFrame, file_path: str, save_path: str):
-    filename = os.path.basename(file_path)
-    if filename.endswith('.csv'):
-        df.to_csv(f"{save_path}/(With Tagging) {filename}", index=False)
-    elif filename.endswith('.xlsx'):
-        df.to_excel(f"{save_path}/(With Tagging) {filename}", index=False)
-    else:
-        raise RuntimeError("No output generated. Invalid file format")
-    
-def main(db_file_path: str, file_paths: tuple, save_path: str):
+def main(well_df: pd.DataFrame, df: pd.DataFrame):
     try:
-        wells_df = get_well_df(db_file_path)
+        
+        # Make copies of input dataframes
+        well_name_matching_df = df.copy()
+        well_name_matching_well_df = well_df.copy()
 
-        for file in file_paths:
+        # Format input df
+        well_name_matching_df['RRC'] = well_name_matching_df.apply(format_rrc, axis=1)
+        well_name_matching_df['RRC'] = well_name_matching_df['RRC'].astype('Int64')
 
-            print(f"Processing {os.path.basename(file)}")
+        # Create orig_df for reference
+        orig_df = well_name_matching_df.copy()
+        orig_df['row_number'] = orig_df.index
 
-            # Read and format input file
-            df = read_file(file)
+        # Apply first input file filters for well name then cleanup
+        with_well_name_df = apply_first_filters(well_name_matching_df)
+        cleaned_input_df = cleanup_input_file(with_well_name_df)
 
-            # Match by well name and well number
-            well_name_rrc_matched_df = well_name_rrc_match(wells_df, df)
+        # Cleanup well df
+        cleaned_di_df = clean_di_file(well_name_matching_well_df)
 
-            # Make copies of input dataframes
-            well_name_matching_df = df.copy()
-            well_name_matching_well_df = wells_df.copy()
+        # Match by well name and number
+        well_matched_df = merge_and_filter(cleaned_input_df, cleaned_di_df, orig_df)
 
-            # Format input df
-            well_name_matching_df['RRC'] = well_name_matching_df.apply(format_rrc, axis=1)
-            well_name_matching_df['RRC'] = well_name_matching_df['RRC'].astype('Int64')
+        # Apply the rest of the filters
+        final_df = apply_all_filters(well_matched_df)
 
-            # Create orig_df for reference
-            orig_df = well_name_matching_df.copy()
-            orig_df['row_number'] = orig_df.index
+        # Clean up
+        final_df.rename(columns={
+            'id': 'Well ID',
+            'api10': 'API10',
+            'api14': 'API14',
+            'well_status': 'Well Status',
+            'well_name': 'DI Well Name',
+            'well_number': 'DI Well Number',
+            'lease_name': 'Lease Name',
+            'operator': 'DI Operator Name',
+            'well_name_number': 'Well Name & Number'}, inplace=True)
+        
+        final_df.drop(columns=[
+                        'mh_county',
+                        'mh_state',
+                        'raw_well_number',
+                        'mh_well_numbers',
+                        'county',
+                        'state',
+                        'db_match',
+                        'clean_di_well_name',
+                        'row_number',
+                        'clean_mh_well_name',
+                        'clean_combined_name',
+                        'clean_operator_name'],
+                axis=1,
+                inplace=True)
 
-            # Apply first input file filters for well name then cleanup
-            with_well_name_df = apply_first_filters(well_name_matching_df)
-            cleaned_input_df = cleanup_input_file(with_well_name_df)
-
-            # Cleanup well df
-            cleaned_di_df = clean_di_file(well_name_matching_well_df)
-
-            # Match by well name and number
-            well_matched_df = merge_and_filter(cleaned_input_df, cleaned_di_df, orig_df)
-
-            # Apply the rest of the filters
-            final_df = apply_all_filters(well_matched_df)
-
-            # Clean up
-            final_df.rename(columns={
-                'id': 'Well ID',
-                'api10': 'API10',
-                'api14': 'API14',
-                'well_status': 'Well Status',
-                'well_name': 'DI Well Name',
-                'well_number': 'DI Well Number',
-                'lease_name': 'Lease Name',
-                'operator': 'DI Operator Name',
-                'well_name_number': 'Well Name & Number'}, inplace=True)
-            
-            final_df.drop(columns=[
-                            'mh_county',
-                            'mh_state',
-                            'raw_well_number',
-                            'mh_well_numbers',
-                            'county',
-                            'state',
-                            'db_match',
-                            'clean_di_well_name',
-                            'row_number',
-                            'clean_mh_well_name',
-                            'clean_combined_name',
-                            'clean_operator_name'],
-                    axis=1,
-                    inplace=True)
-
-            # Add RRC Matched rows to Well Name Matched dataframe
-            well_name_rrc_matched_df.loc[well_name_rrc_matched_df['Well ID'].isna(), :] = final_df.loc[well_name_rrc_matched_df['Well ID'].isna(), :].values
-
-            # Fomart output file and export
-            format_file_and_export(well_name_rrc_matched_df, file, save_path)
+        # Return to main for further processing
+        return final_df
 
     except Exception as e:
         print(f"An error occurred: {e}")
         raise RuntimeError    
-
 
 if __name__ == "__main__":
     main()
