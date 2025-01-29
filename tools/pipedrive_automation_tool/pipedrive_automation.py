@@ -164,18 +164,18 @@ def get_email_address(
         contact_email_addresses
     WHERE 1=1
         AND contact_id IN ({database_id})
-        AND email_address IS NOT NULL
-    LIMIT 1;
+        AND email_address IS NOT NULL;
     """
 
     email_column_value = row.get('Person - Email 1')
     if pd.isna(email_column_value):
 
         cursor.execute(email_query)
-        result = cursor.fetchone()
+        result = cursor.fetchall()
         if result:
-            df.loc[i, 'Person - Email 1'] = result[0]
-            df.loc[i, 'Person - Email'] = result[0]
+            df.loc[i, 'Person - Email'] = result[0][0]
+            for index, email in enumerate(result[:17], start=1):
+                df.loc[i, f'Person - Email {index}'] = email[0]
 
 def get_timezone(row, tz_dict: dict):
     phone_number = row.get('Person - Phone 1')
