@@ -118,7 +118,7 @@ class App(ctk.CTk):
         self.documentation_button.grid(row=1, column=0, padx=10, pady=(0,10), stick='nsew')
 
         self.clean_phone_tool_button = ctk.CTkButton(self.tool_options_frame,
-                                                     text='Phone Number Cleanup Tool',
+                                                     text='Phone Cleaning Tool',
                                                      command=self.display_phone_clean_tool,
                                                      fg_color='#5b5c5c',
                                                      hover_color='#424343')
@@ -329,7 +329,7 @@ class App(ctk.CTk):
         self.current_frame.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
 
         label = ctk.CTkLabel(self.current_frame,
-                             text="Phone Number Clean Up Tool",
+                             text="Phone Cleaning Tool",
                              font=ctk.CTkFont(
                                  size=30,
                                  weight='bold'
