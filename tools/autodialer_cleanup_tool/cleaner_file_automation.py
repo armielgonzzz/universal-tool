@@ -199,15 +199,15 @@ def add_jc(path: str, dbx):
     get_update_df(received_df, 'JCSMS-Received')
 
     print("Adding Sheet JCSMS-Sent")
-    get_update_df(sent_df, 'JCSMS-Sent')
+    # get_update_df(sent_df, 'JCSMS-Sent')
 
     # # Use ExcelWriter to append the DataFrame to the existing file
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         
     #     received_df.to_excel(writer, sheet_name='JCSMS-Received', index=False, header=False)
 
-    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-    #     sent_df.to_excel(writer, sheet_name='JCSMS-Sent', index=False, header=False)
+    with pd.ExcelWriter('./data/List Cleaner.xlsx', engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        sent_df.to_excel(writer, sheet_name='JCSMS-Sent', index=False, header=False)
 
 def add_sly(path: str, dbx):
     df = read_dropbox_file(path, dbx)
@@ -234,13 +234,13 @@ def add_contact_center(df: pd.DataFrame, dbx):
     get_update_df(inbound_df, 'ContactMgtLogs')
 
     print("Adding Sheet Outbound-2weeks")
-    get_update_df(outbound_df, 'Outbound-2weeks')
+    # get_update_df(outbound_df, 'Outbound-2weeks')
 
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
     #     inbound_df.to_excel(writer, sheet_name='ContactMgtLogs', index=False, header=False)
 
-    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-    #     outbound_df.to_excel(writer, sheet_name='Outbound-2weeks', index=False, header=False)
+    with pd.ExcelWriter('./data/List Cleaner.xlsx', engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        outbound_df.to_excel(writer, sheet_name='Outbound-2weeks', index=False, header=False)
 
 def add_mvp(df: pd.DataFrame, dbx):
     df['Sender Number'] = df['Sender Number'].astype('Int64')
@@ -278,13 +278,13 @@ def add_rc(df: pd.DataFrame, dbx):
     get_update_df(received_df, 'RCSMS-Received')
     
     print("Adding Sheet RCSMS-Sent")
-    get_update_df(sent_df, 'RCSMS-Sent')
+    # get_update_df(sent_df, 'RCSMS-Sent')
 
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
     #     received_df.to_excel(writer, sheet_name='RCSMS-Received', index=False, header=False)
 
-    # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-    #     sent_df.to_excel(writer, sheet_name='RCSMS-Sent', index=False, header=False)
+    with pd.ExcelWriter('./data/List Cleaner.xlsx', engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        sent_df.to_excel(writer, sheet_name='RCSMS-Sent', index=False, header=False)
 
 def get_latest_file(folder_path, dbx):
     try:
@@ -422,6 +422,18 @@ def update_latest_cleaner_file_label(app_window: ctk.CTkFrame, dbx: dropbox.Drop
     last_modified_date = metadata.client_modified
     app_window.last_update_label.configure(text=f'List cleaner file last update: {last_modified_date}')
 
+def drop_list_cleaner_dupes(file_path: str):
+    sheets = pd.ExcelFile(file_path).sheet_names
+    dataframes = {}
+    
+    for sheet in sheets:
+        df = pd.read_excel(file_path, sheet_name=sheet, header=None)
+        dataframes[sheet] = df.drop_duplicates()
+
+    with pd.ExcelWriter(file_path, engine='xlsxwriter') as writer:
+        for sheet_name, df in dataframes.items():
+            df.to_excel(writer, sheet_name=sheet_name, index=False, header=None)
+
 def main(auth_code: str, app_window: ctk.CTkFrame):
 
     try:
@@ -462,6 +474,9 @@ def main(auth_code: str, app_window: ctk.CTkFrame):
 
         # Save all new sheets locally
         append_to_multiple_sheets(update_df_dict, local_list_cleaner_path)
+
+        # Drop all duplicates of list cleaner file
+        drop_list_cleaner_dupes(local_list_cleaner_path)
 
         # Upload to dropbox
         export_to_dropbox(local_list_cleaner_path, dbx, dropbox_list_cleaner_path)

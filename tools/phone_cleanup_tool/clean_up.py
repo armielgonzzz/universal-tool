@@ -94,10 +94,9 @@ def apply_all_filters(df: pd.DataFrame) -> pd.DataFrame:
         last_rvm_mask = check_date(df, 'RVM - Last RVM Date')
         apply_mask(df, last_rvm_mask, 'RVM - Last RVM Date - last 7 days from tool run date')
 
-    # NOTE: Removed this condition and added it to the new condition of Kyle
-    # if 'Latest Text Marketing Date (Sent)' in df.columns:
-    #     last_marketing_text_mask = check_date(df, 'Latest Text Marketing Date (Sent)')
-    #     apply_mask(df, last_marketing_text_mask, 'Latest Text Marketing Date (Sent) - last 7 days from tool run date')
+    if 'Latest Text Marketing Date (Sent)' in df.columns:
+        last_marketing_text_mask = check_date(df, 'Latest Text Marketing Date (Sent)')
+        apply_mask(df, last_marketing_text_mask, 'Latest Text Marketing Date (Sent) - last 7 days from tool run date')
 
     if 'Rolling 30 Days Max Outbound Count' and 'Rolling 30 Days Text Marketing Count' in df.columns:
         rolling_days_mask = (df['Rolling 30 Days Max Outbound Count'] + df['Rolling 30 Days Text Marketing Count']) >= 3
@@ -111,20 +110,20 @@ def apply_all_filters(df: pd.DataFrame) -> pd.DataFrame:
         deal_text_opt_in = df['Deal - Text Opt-in'].str.upper().str.contains('NO', na=False)
         apply_mask(df, deal_text_opt_in, 'Deal - Text Opt-in is No')
 
-    """The following new conditions is added by Kyle in January 29, 2025"""
-    # Updated this old mask from 7 days to 30 days
-    if 'Latest Text Marketing Date (Sent)' in df.columns:
-        last_marketing_text_mask = check_date_30_days(df, 'Latest Text Marketing Date (Sent)')
-        apply_mask(df, last_marketing_text_mask, 'Latest Text Marketing Date (Sent) - last 30 days from tool run date')
+    # """The following new conditions is added by Kyle in January 29, 2025"""
+    # # Updated this old mask from 7 days to 30 days
+    # if 'Latest Text Marketing Date (Sent)' in df.columns:
+    #     last_marketing_text_mask = check_date_30_days(df, 'Latest Text Marketing Date (Sent)')
+    #     apply_mask(df, last_marketing_text_mask, 'Latest Text Marketing Date (Sent) - last 30 days from tool run date')
 
-    # All below masks are new conditions
-    if 'Latest Text Marketing Date (Received)' in df.columns:
-        last_marketing_text_mask = check_date_30_days(df, 'Latest Text Marketing Date (Received)')
-        apply_mask(df, last_marketing_text_mask, 'Latest Text Marketing Date (Received) - last 30 days from tool run date')
+    # # All below masks are new conditions
+    # if 'Latest Text Marketing Date (Received)' in df.columns:
+    #     last_marketing_text_mask = check_date_30_days(df, 'Latest Text Marketing Date (Received)')
+    #     apply_mask(df, last_marketing_text_mask, 'Latest Text Marketing Date (Received) - last 30 days from tool run date')
 
-    if 'RVM - Last Reason for Failure' in df.columns:
-        rvm_last_reason_mask = df['RVM - Last Reason for Failure'].isin(["Not Covered", "Removed", "Do not Dial List removed"])
-        apply_mask(df, rvm_last_reason_mask, 'RVM - Last Reason for Failure is either Not Covered, Removed, Do not Dial List removed')
+    # if 'RVM - Last Reason for Failure' in df.columns:
+    #     rvm_last_reason_mask = df['RVM - Last Reason for Failure'].isin(["Not Covered", "Removed", "Do not Dial List removed"])
+    #     apply_mask(df, rvm_last_reason_mask, 'RVM - Last Reason for Failure is either Not Covered, Removed, Do not Dial List removed')
     
     """End of new conditions"""
     

@@ -3,6 +3,7 @@ import customtkinter as ctk
 import threading
 import webbrowser
 import dropbox
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from customtkinter import filedialog
 from tools.text_inactive_tool.text_inactive import main as run_text_inactive
@@ -712,12 +713,12 @@ class AutoDialerCleaner(ctk.CTkFrame):
                              ))
         label.grid(row=0, column=0, padx=10, pady=(10,0), sticky='nsew')
 
-        update_cleaner_button = ctk.CTkButton(self,
+        authenticate_dropbox_button = ctk.CTkButton(self,
                                               text="Authenticate Dropbox",
                                               fg_color='#5b5c5c',
                                               hover_color='#424343',
                                               command=lambda:self.authenticate_dropbox(self))
-        update_cleaner_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
+        authenticate_dropbox_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
 
         update_cleaner_button = ctk.CTkButton(self,
                                             text="Update list cleaner file",
@@ -726,19 +727,19 @@ class AutoDialerCleaner(ctk.CTkFrame):
                                             command=lambda:self.update_list_cleaner())
         update_cleaner_button.grid(row=2, column=0, padx=5, pady=5, sticky="ns")
 
-        list_button = ctk.CTkButton(self,
+        files_to_process_button = ctk.CTkButton(self,
                                     text="Select files to clean",
                                     fg_color='#5b5c5c',
                                     hover_color='#424343',
                                     command=lambda:self.select_files_to_clean(self))
-        list_button.grid(row=4, column=0, padx=5, pady=5, sticky="ns")
+        files_to_process_button.grid(row=4, column=0, padx=5, pady=5, sticky="ns")
 
-        list_button = ctk.CTkButton(self,
+        save_path_button = ctk.CTkButton(self,
                                     text="Save output files to",
                                     fg_color='#5b5c5c',
                                     hover_color='#424343',
                                     command=lambda:self.select_save_path(self))
-        list_button.grid(row=6, column=0, padx=5, pady=5, sticky="ns")
+        save_path_button.grid(row=6, column=0, padx=5, pady=5, sticky="ns")
 
         self.last_update_label = ctk.CTkLabel(self,
                                               text=None,
@@ -754,7 +755,9 @@ class AutoDialerCleaner(ctk.CTkFrame):
             dbx = dropbox.Dropbox(oauth_result.access_token)
             metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/List Cleaner.xlsx')
             last_modified_date = metadata.client_modified
-            self.last_update_label.configure(text=f'List cleaner file last update: {last_modified_date}')
+            utc_time = last_modified_date.replace(tzinfo=ZoneInfo("UTC"))
+            cst_time = utc_time.astimezone(ZoneInfo("America/Chicago"))
+            self.last_update_label.configure(text=f'List cleaner file last update: {cst_time.strftime("%Y-%m-%d %H:%M:%S %Z")}')
     
     def authentication_result_window(self):
         authentication_result = ctk.CTkToplevel()
