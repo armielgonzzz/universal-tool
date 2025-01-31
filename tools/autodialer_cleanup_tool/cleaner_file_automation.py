@@ -423,6 +423,7 @@ def update_latest_cleaner_file_label(app_window: ctk.CTkFrame, dbx: dropbox.Drop
     app_window.last_update_label.configure(text=f'List cleaner file last update: {last_modified_date}')
 
 def drop_list_cleaner_dupes(file_path: str):
+    print("Removing duplicates")
     sheets = pd.ExcelFile(file_path).sheet_names
     dataframes = {}
     
