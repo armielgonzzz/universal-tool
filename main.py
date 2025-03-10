@@ -58,7 +58,12 @@ def create_directories() -> None:
         './data',
         './data/pipedrive',
         './data/tz_file',
-        './data/c3_files'
+        './data/c3_files',
+        './data/c3_files/contact_skip_traced_addresses',
+        './data/c3_files/contact_addresses',
+        './data/c3_files/contact_email_addresses',
+        './data/c3_files/contact_phone_numbers',
+        './data/c3_files/contacts'
         ]
     
     for dir in directories:

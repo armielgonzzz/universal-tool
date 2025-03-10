@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import warnings
 from rapidfuzz import process, fuzz
+from sqlalchemy import create_engine
+from urllib.parse import quote
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 pd.options.mode.chained_assignment = None
@@ -17,43 +19,101 @@ def read_file(path: str):
 
 def compile_c3_contacts():
     print("Compiling database files")
-    c3_data_path = './data/c3_files'
+    # c3_data_path = './data/c3_files'
 
-    # Compile contact addresses
-    for subdir, _, files in os.walk(os.path.join(c3_data_path, 'contact_addresses')):
-        source_address_df = pd.concat([pd.read_csv(os.path.join(subdir, file), low_memory=False) for file in files], ignore_index=True)
+    # # Compile contact addresses
+    # for subdir, _, files in os.walk(os.path.join(c3_data_path, 'contact_addresses')):
+    #     source_address_df = pd.concat([pd.read_csv(os.path.join(subdir, file), low_memory=False) for file in files], ignore_index=True)
 
-    # Compile email addresses
-    for subdir, _, files in os.walk(os.path.join(c3_data_path, 'contact_email_addresses')):
-        email_address_df = pd.concat([pd.read_csv(os.path.join(subdir, file), low_memory=False) for file in files], ignore_index=True)
+    # # Compile email addresses
+    # for subdir, _, files in os.walk(os.path.join(c3_data_path, 'contact_email_addresses')):
+    #     email_address_df = pd.concat([pd.read_csv(os.path.join(subdir, file), low_memory=False) for file in files], ignore_index=True)
 
-    # Compile phone numbers
-    for subdir, _, files in os.walk(os.path.join(c3_data_path, 'contact_phone_numbers')):
-        phone_number_df = pd.concat([pd.read_csv(os.path.join(subdir, file), low_memory=False) for file in files], ignore_index=True)
+    # # Compile phone numbers
+    # for subdir, _, files in os.walk(os.path.join(c3_data_path, 'contact_phone_numbers')):
+    #     phone_number_df = pd.concat([pd.read_csv(os.path.join(subdir, file), low_memory=False) for file in files], ignore_index=True)
 
-    # Compile skip traced addresses
-    for subdir, _, files in os.walk(os.path.join(c3_data_path, 'contact_skip_traced_addresses')):
-        skip_traced_df = pd.concat([pd.read_csv(os.path.join(subdir, file), low_memory=False) for file in files], ignore_index=True)
+    # # Compile skip traced addresses
+    # for subdir, _, files in os.walk(os.path.join(c3_data_path, 'contact_skip_traced_addresses')):
+    #     skip_traced_df = pd.concat([pd.read_csv(os.path.join(subdir, file), low_memory=False) for file in files], ignore_index=True)
 
-    # Compile skip traced addresses
-    for subdir, _, files in os.walk(os.path.join(c3_data_path, 'contacts')):
-        contacts_df = pd.concat([pd.read_csv(os.path.join(subdir, file), low_memory=False) for file in files], ignore_index=True)
-    skip_traced_df['skip_traced_address'] = skip_traced_df[['address', 'city', 'state']].fillna('').agg(' '.join, axis=1)
+    # # Compile skip traced addresses
+    # for subdir, _, files in os.walk(os.path.join(c3_data_path, 'contacts')):
+    #     contacts_df = pd.concat([pd.read_csv(os.path.join(subdir, file), low_memory=False) for file in files], ignore_index=True)
+    # skip_traced_df['skip_traced_address'] = skip_traced_df[['address', 'city', 'state']].fillna('').agg(' '.join, axis=1)
+
+    CM_HOST = os.getenv('CM_HOST')
+    CM_USER = os.getenv('CM_USER')
+    CM_PASSWORD = os.getenv('CM_PASSWORD')
+    CM_DB = os.getenv('CM_DB')
+    CM_PORT = os.getenv('CM_PORT')
+
+    skip_traced_query = """
+    SELECT
+        contact_id,
+        CONCAT_WS(' ', address, city, state) AS skip_traced_address,
+        deleted_at
+    FROM
+        contact_skip_traced_addresses;
+    """
+
+    source_address_query = """
+    SELECT
+        contact_id,
+        CONCAT_WS(' ', source_address, source_city, source_state) AS source_address,
+        deleted_at
+    FROM
+        contact_addresses;
+    """
+
+    email_query = """
+    SELECT
+        contact_id,
+        email_address,
+        deleted_at
+    FROM
+        contact_email_addresses;
+    """
+
+    phone_query = """
+    SELECT
+        contact_id,
+        phone_number,
+        deleted_at
+    FROM
+        contact_phone_numbers;
+    """
+
+    contact_query = """
+    SELECT
+        id AS contact_id,
+        UPPER(CONCAT_WS(' ', first_name, middle_name, last_name)) AS full_name,
+        deleted_at
+    FROM
+        contacts;
+    """
+
+    engine = create_engine(f"mysql+pymysql://{CM_USER}:{quote(CM_PASSWORD)}@{CM_HOST}:{CM_PORT}/{CM_DB}")
+    skip_traced_df = pd.read_sql_query(skip_traced_query, con=engine)
+    source_address_df = pd.read_sql_query(source_address_query, con=engine)
+    email_address_df = pd.read_sql_query(email_query, con=engine)
+    phone_number_df = pd.read_sql_query(phone_query, con=engine)
+    contacts_df = pd.read_sql_query(contact_query, con=engine)
 
     # Skip traced cleanups
     skip_traced_df.dropna(subset=['skip_traced_address'], inplace=True)
     skip_traced_df['skip_traced_address'] = skip_traced_df['skip_traced_address'].str.upper().str.strip()
     skip_traced_df['skip_traced_address'] = skip_traced_df['skip_traced_address'].str.replace(',', '')
     skip_traced_df['skip_traced_address'] = skip_traced_df['skip_traced_address'].str.replace(r'\s+', ' ', regex=True).str.strip()
-    skip_traced_df = skip_traced_df[['contact_id', 'skip_traced_address', 'address_deleted_at']].rename(columns={'address_deleted_at': 'deleted_at'})
+    skip_traced_df = skip_traced_df[['contact_id', 'skip_traced_address', 'deleted_at']]
 
     # Source address cleanups
-    source_address_df['source_address'] = source_address_df[['source_address', 'source_city', 'source_state']].fillna('').agg(' '.join, axis=1)
+    # source_address_df['source_address'] = source_address_df[['source_address', 'source_city', 'source_state']].fillna('').agg(' '.join, axis=1)
     source_address_df.dropna(subset=['source_address'], inplace=True)
     source_address_df['source_address'] = source_address_df['source_address'].str.upper().str.strip()
     source_address_df['source_address'] = source_address_df['source_address'].str.replace(',', '')
     source_address_df['source_address'] = source_address_df['source_address'].str.replace(r'\s+', ' ', regex=True).str.strip()
-    source_address_df = source_address_df[['contact_id', 'source_address', 'address_deleted_at']].rename(columns={'address_deleted_at': 'deleted_at'})
+    source_address_df = source_address_df[['contact_id', 'source_address', 'deleted_at']]
 
     # Emaill address cleanups
     email_address_df.dropna(subset=['email_address'], inplace=True)
@@ -75,6 +135,12 @@ def compile_c3_contacts():
     contacts_df['full_name'] = contacts_df['full_name'].str.upper().str.strip()
     contacts_df['full_name'] = contacts_df['full_name'].str.replace(',', '')
     contacts_df['full_name'] = contacts_df['full_name'].str.replace(r'\s+', ' ', regex=True).str.strip()
+
+    skip_traced_df.to_csv('./data/c3_files/contact_skip_traced_addresses/skip_traced.csv', index=False)
+    source_address_df.to_csv('./data/c3_files/contact_addresses/source_addresses.csv', index=False)
+    email_address_df.to_csv('./data/c3_files/contact_email_addresses/emails.csv', index=False)
+    phone_number_df.to_csv('./data/c3_files/contact_phone_numbers/phones.csv', index=False)
+    contacts_df.to_csv('./data/c3_files/contacts/contact_names.csv', index=False)
 
     return skip_traced_df, source_address_df, email_address_df, phone_number_df, contacts_df
 
