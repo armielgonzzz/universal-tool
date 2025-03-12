@@ -42,11 +42,10 @@ def compile_c3_contacts():
     #     contacts_df = pd.concat([pd.read_csv(os.path.join(subdir, file), low_memory=False) for file in files], ignore_index=True)
     # skip_traced_df['skip_traced_address'] = skip_traced_df[['address', 'city', 'state']].fillna('').agg(' '.join, axis=1)
 
-    CM_HOST = os.getenv('CM_HOST')
-    CM_USER = os.getenv('CM_USER')
-    CM_PASSWORD = os.getenv('CM_PASSWORD')
-    CM_DB = os.getenv('CM_DB')
-    CM_PORT = os.getenv('CM_PORT')
+    CM_HOST = os.getenv('DB_HOST')
+    CM_USER = os.getenv('DB_USER')
+    CM_PASSWORD = os.getenv('DB_PASSWORD')
+    CM_DB = os.getenv('DB_NAME')
 
     skip_traced_query = """
     SELECT
@@ -93,7 +92,7 @@ def compile_c3_contacts():
         contacts;
     """
 
-    engine = create_engine(f"mysql+pymysql://{CM_USER}:{quote(CM_PASSWORD)}@{CM_HOST}:{CM_PORT}/{CM_DB}")
+    engine = create_engine(f"mysql+pymysql://{CM_USER}:{quote(CM_PASSWORD)}@{CM_HOST}/{CM_DB}")
     skip_traced_df = pd.read_sql_query(skip_traced_query, con=engine)
     source_address_df = pd.read_sql_query(source_address_query, con=engine)
     email_address_df = pd.read_sql_query(email_query, con=engine)
