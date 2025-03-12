@@ -379,7 +379,11 @@ def add_pipedrive_columns(input_df: pd.DataFrame, pipedrive_exploded_df: pd.Data
     final_df = with_pipedrive_df.merge(contact_id_col, on=groupby_column, how='left')[output_columns]
     return final_df
 
+def clean_ids(id_str):
+    return " | ".join([x.strip() for x in id_str.split("|") if x.strip()])
+
 def extract_pipedrive_data(path: str):
+    print("Reading pipedrive data")
     pipedrive_df = read_file(path)
     pipedrive_columns = [
         'Deal - ID',
@@ -393,6 +397,8 @@ def extract_pipedrive_data(path: str):
         'Person - Mailing Address'
     ]
 
+    pipedrive_df.loc[pipedrive_df['Deal - Unique Database ID'].notna(), 'Deal - Unique Database ID'] = \
+    pipedrive_df.loc[pipedrive_df['Deal - Unique Database ID'].notna(), 'Deal - Unique Database ID'].apply(clean_ids)
     pipedrive_df['Deal - Unique Database ID'] = pipedrive_df['Deal - Unique Database ID'].str.split(' | ', regex=False)
     pipedrive_exploded_df = pipedrive_df.explode('Deal - Unique Database ID') \
         .drop_duplicates(subset=['Deal - Unique Database ID']) \
