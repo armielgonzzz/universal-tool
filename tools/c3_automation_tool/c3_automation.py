@@ -149,8 +149,8 @@ def find_phone_number_match(input_df: pd.DataFrame, phone_number_df: pd.DataFram
     merged_contacts_df = phone_number_df.merge(contacts_df[['contact_id', 'deleted_at']].rename(columns={'deleted_at': 'contact_deleted_at'}),
                                                 on='contact_id',
                                                 how='left')
-    filtered_email_df = merged_contacts_df[(merged_contacts_df['phone_number'].isin(input_df['Contact Information'])) & (merged_contacts_df['contact_deleted_at'].isna())]
-    input_df = input_df.merge(filtered_email_df[filtered_email_df['deleted_at'].isna()],
+    filtered_email_df = merged_contacts_df[(merged_contacts_df['phone_number'].isin(input_df['Contact Information']))]
+    input_df = input_df.merge(filtered_email_df,
                               left_on='Contact Information',
                               right_on='phone_number',
                               how='left')
@@ -165,8 +165,8 @@ def find_email_address_match(input_df: pd.DataFrame, email_address_df: pd.DataFr
     merged_contacts_df = email_address_df.merge(contacts_df[['contact_id', 'deleted_at']].rename(columns={'deleted_at': 'contact_deleted_at'}),
                                                 on='contact_id',
                                                 how='left')
-    filtered_email_df = merged_contacts_df[(merged_contacts_df['email_address'].isin(input_df['Contact Information'])) & (merged_contacts_df['contact_deleted_at'].isna())]
-    input_df = input_df.merge(filtered_email_df[filtered_email_df['deleted_at'].isna()],
+    filtered_email_df = merged_contacts_df[(merged_contacts_df['email_address'].isin(input_df['Contact Information']))]
+    input_df = input_df.merge(filtered_email_df,
                               left_on='Contact Information',
                               right_on='email_address',
                               how='left')
@@ -353,6 +353,7 @@ def add_pipedrive_columns(input_df: pd.DataFrame, pipedrive_exploded_df: pd.Data
                                right_on='Deal - Unique Database ID',
                                how='left')
 
+    merged_df['Contact Info Removal from Database Date'] = merged_df['deleted_at']
     merged_df['Deal ID'] = merged_df['Deal - ID']
     merged_df['Contact Person'] = merged_df['Activity - Contact person']
     merged_df['PD Removal Activity Date'] = merged_df['Activity - Add time']
