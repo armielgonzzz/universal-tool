@@ -369,6 +369,23 @@ def concat_contact_center_files(path: str, dbx):
         combined_df = pd.concat(df_list)
         return combined_df
     
+def concat_inbound_contact_history(path: str, dbx: dropbox.Dropbox):
+
+    result = dbx.files_list_folder(path)
+    inbound_contact_history_files = result.entries
+    df_list = []
+
+    for file in inbound_contact_history_files:
+        if isinstance(file, dropbox.files.FileMetadata):
+            file_path = file.path_lower
+            df = read_dropbox_file(file_path, dbx)
+            df_list.append(df)
+    
+    if df_list:
+        combined_df = pd.concat(df_list)
+        return combined_df
+
+    
 def concat_rc_files(path: str, dbx):
 
     result = dbx.files_list_folder(path)
@@ -400,6 +417,23 @@ def concat_mvp_files(path: str, dbx):
     if df_list:
         combined_df = pd.concat(df_list)
         return combined_df
+    
+def concat_inbound_mvp_calls(path: str, dbx: dropbox.Dropbox):
+
+    result = dbx.files_list_folder(path)
+    inbound_mvp_call_files = result.entries
+    df_list = []
+
+    for file in inbound_mvp_call_files:
+        if isinstance(file, dropbox.files.FileMetadata):
+            file_path = file.path_lower
+            df = read_dropbox_file(file_path, dbx)
+            df_list.append(df)
+    
+    if df_list:
+        combined_df = pd.concat(df_list)
+        return combined_df
+
 
 def create_local_list_cleaner(dropbox_path: str, local_path: str, dbx: dropbox.Dropbox) -> None:
 
