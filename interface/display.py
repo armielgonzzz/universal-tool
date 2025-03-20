@@ -779,7 +779,7 @@ class AutoDialerCleaner(ctk.CTkFrame):
         if oauth_result.access_token:
             self.auth_code = oauth_result.access_token
             dbx = dropbox.Dropbox(oauth_result.access_token)
-            metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/List Cleaner.xlsx')
+            metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/New List Cleaner.xlsx')
             last_modified_date = metadata.client_modified
             utc_time = last_modified_date.replace(tzinfo=ZoneInfo("UTC"))
             cst_time = utc_time.astimezone(ZoneInfo("America/Chicago"))

@@ -170,19 +170,17 @@ def clean_contact_id_deal_id(df: pd.DataFrame, id_set: set) -> pd.DataFrame:
 def get_phone_set(cleaner_file: str) -> set:
 
     list_cleaner_df = pd.read_excel(cleaner_file,
-                                    sheet_name=['ContMgt+MVP+JC+PD+RC',
+                                    sheet_name=['CCM+CH+MVPC+MVPT+JC+RC+PD',
                                                 'DNC',
-                                                'JCSMS-Sent',
-                                                'RCSMS-Sent',
-                                                'Outbound-2weeks',
+                                                'CallOut-14d+TextOut-30d',
+                                                'PDConvDup',
                                                 'FromOtherList'],
                                     header=None)
     
-    final_list_cleaner_df = pd.concat([list_cleaner_df['ContMgt+MVP+JC+PD+RC'],
+    final_list_cleaner_df = pd.concat([list_cleaner_df['CCM+CH+MVPC+MVPT+JC+RC+PD'],
                                         list_cleaner_df['DNC'],
-                                        list_cleaner_df['JCSMS-Sent'],
-                                        list_cleaner_df['RCSMS-Sent'],
-                                        list_cleaner_df['Outbound-2weeks'],
+                                        list_cleaner_df['CallOut-14d+TextOut-30d'],
+                                        list_cleaner_df['PDConvDup'],
                                         list_cleaner_df['FromOtherList']])
 
     # Clean up the list and filter for valid phone numbers
@@ -205,7 +203,7 @@ def main(auth_code: str, list_files: tuple, save_path: str):
         
         print("Preparing List Cleaner")
         local_list_cleaner_path = './data/List Cleaner.xlsx'
-        dropbox_list_cleaner_path = '/List Cleaner & JC DNC/List Cleaner.xlsx'
+        dropbox_list_cleaner_path = '/List Cleaner & JC DNC/New List Cleaner.xlsx'
 
         extract_list_cleaner_file(auth_code, local_list_cleaner_path, dropbox_list_cleaner_path)
 
