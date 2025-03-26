@@ -299,6 +299,7 @@ def filter_input_file(input_df: pd.DataFrame):
         direct_mail_df['row_number'] = direct_mail_df.index
 
     if not phone_df.empty:
+        phone_df['Contact Information'] = phone_df['Contact Information'].astype(str)
         phone_df['Contact Information'] = phone_df['Contact Information'].str.replace(',', '').str.upper().str.strip() # Remove comma
         phone_df['Contact Information'] = phone_df['Contact Information'].str.replace(' ', '') # Remove space
 
