@@ -332,19 +332,20 @@ def add_pipedrive_columns(input_df: pd.DataFrame, pipedrive_exploded_df: pd.Data
         'Notes'
     ]
     output_columns = [
-        'Contact Information',
-        'Opt-out Medium',
-        'Opt-out Entry Date',
-        'Source',
-        'Source of Opt-out Request',
         'Contact ID',
         'Deal ID',
         'Contact Person',
         'PD Removal Activity Date',
+        'Source of Opt-out Request',
+        'Opt-out Medium',
+        'Contact Information',
+        'Opt-out Entry Date',
         'Contact Info Removal from Database Date',
+        'Source',
+        'Marketing Medium',
         'Deal Status',
         'Activity',
-        'Marketing Medium',
+        'Category',
         'Notes'
     ]
     groupby_column = 'row_number'
@@ -363,15 +364,13 @@ def add_pipedrive_columns(input_df: pd.DataFrame, pipedrive_exploded_df: pd.Data
     merged_df['Marketing Medium'] = merged_df['Deal - Marketing Medium']
 
     pipedrive_columns.append('deleted_at')
-    if 'MO NAME' in merged_df.columns:
-        pipedrive_columns.append('MO NAME')
     merged_df.drop(columns=pipedrive_columns, axis=1, inplace=True)
 
     columns_to_retain = [col for col in merged_df.columns if col not in agg_columns and col != groupby_column]
     aggregated_df = merged_df[merged_df['Deal ID'].notna()].groupby(groupby_column).agg(
         {col: lambda x: ' | '.join(map(str, sorted(set(x[pd.notna(x)])))) if x[pd.notna(x)].any() else np.nan for col in agg_columns}
     ).reset_index()
-    
+
     contact_id_col = merged_df.groupby(groupby_column, sort=False, observed=True)['Contact ID'] \
         .agg(lambda x: ' | '.join(map(str, sorted(set(x.dropna())))) if x.notna().any() else pd.NA) \
         .reset_index()
@@ -379,6 +378,21 @@ def add_pipedrive_columns(input_df: pd.DataFrame, pipedrive_exploded_df: pd.Data
     retained_df = merged_df[columns_to_retain + [groupby_column]].drop_duplicates(groupby_column)
     with_pipedrive_df = retained_df.merge(aggregated_df, on=groupby_column, how='left').drop(columns=['Contact ID'], axis=1)
     final_df = with_pipedrive_df.merge(contact_id_col, on=groupby_column, how='left')[output_columns]
+    final_df.drop_duplicates(inplace=True)
+    final_df.rename(columns={
+        'Contact ID': 'UNIQUE_DB_ID',
+        'Deal ID': 'DEAL_ID',
+        'Contact Person': 'CONTACT_PERSON',
+        'PD Removal Activity Date': 'PD_REMOVAL_ACTIVITY_DATE',
+        'Source of Opt-out Request': 'SOURCE_OF_OPT-OUT_REQUEST',
+        'Opt-out Medium': 'OPT-OUT_MEDIUM',
+        'Contact Information': 'OPT-OUT_CONTACT',
+        'Opt-out Entry Date': 'OPT-OUT_ENTRY_DATE',
+        'Contact Info Removal from Database Date': 'CONTACT_INFO_REMOVED_FROM_DB_DATE',
+        'Source': 'SOURCE',
+        'Marketing Medium': 'MARKETING_MEDIUM',
+        'Deal Status': 'DEAL_STATUS',
+        'Activity': 'ACTIVITY'}, inplace=True)
     return final_df
 
 def clean_ids(id_str):
