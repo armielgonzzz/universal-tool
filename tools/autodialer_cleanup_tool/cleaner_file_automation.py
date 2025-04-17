@@ -398,6 +398,14 @@ def add_rc(df: pd.DataFrame, dbx):
     outbound_df_list.append(sent_df.values.tolist())
     sent_df = None
 
+def add_c3(df: pd.DataFrame, dbx):
+    print("Processing C3")
+    df['Contact Information'] = df['Contact Information'].astype(str)
+    df['Contact Information'] = df['Contact Information'].str.replace(r'\D', '', regex=True)
+    output_df = df[df['Contact Information'].str.len() == 10][['Contact Information']].drop_duplicates(subset=['Contact Information'])
+    get_update_df(output_df, 'DNC')
+    output_df = None
+
 def get_latest_file(folder_path, dbx):
     try:
         # List files in the folder
@@ -548,6 +556,21 @@ def concat_inbound_mvp_calls(path: str, dbx: dropbox.Dropbox):
         combined_df = pd.concat(df_list)
         return combined_df
 
+def concat_c3(path: str, dbx):
+
+    result = dbx.files_list_folder(path)
+    mvp_files = result.entries
+    df_list = []
+
+    for file in mvp_files:
+        if isinstance(file, dropbox.files.FileMetadata):
+            file_path = file.path_lower
+            df = read_dropbox_file(file_path, dbx)
+            df_list.append(df)
+    
+    if df_list:
+        combined_df = pd.concat(df_list)
+        return combined_df
 
 def create_local_list_cleaner(dropbox_path: str, local_path: str, dbx: dropbox.Dropbox) -> None:
 
@@ -610,6 +633,10 @@ def main(auth_code: str, app_window: ctk.CTkFrame):
 
         # Update the list cleaner file
         load_sheets(root_path, dbx, conversion_dict, local_list_cleaner_path)
+
+        # Process c3 folder files
+        c3_df = concat_c3(f'{root_path}/c3', dbx)
+        add_c3(c3_df, dbx)
 
         # Process contact_center folder files
         contact_center_df = concat_contact_center_files(f'{root_path}/contact_center', dbx)
