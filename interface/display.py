@@ -33,7 +33,7 @@ def center_new_window(main_window: ctk.CTkFrame,
 
         # Main window dimensions
         main_width = 800
-        main_height = 580
+        main_height = 650
 
         # Update idle task to avoid bugs in changing geometry
         new_window.update_idletasks()
@@ -76,7 +76,7 @@ class App(ctk.CTk):
 
         # Configure window
         self.title("Lead Management Tools")
-        self.geometry(center_main_window(self, 800, 580))
+        self.geometry(center_main_window(self, 800, 650))
         self.resizable(False, False)
 
         # Configure grid layout (4x4)
@@ -351,7 +351,7 @@ class App(ctk.CTk):
         self.input_file_check, self.save_path_check, self.cleaner_file_check = False, False, False
 
         self.current_frame = ctk.CTkFrame(self.tool_window_frame)
-        self.current_frame.grid_rowconfigure(7, weight=1)
+        self.current_frame.grid_rowconfigure((7,8), weight=1)
         self.current_frame.grid_columnconfigure(0, weight=1)
         self.current_frame.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
 
@@ -406,9 +406,27 @@ class App(ctk.CTk):
             self.input_file_check = True
 
             if self.input_file_check and self.save_path_check and self.cleaner_file:
+                switch_frame = ctk.CTkFrame(frame, fg_color="transparent")
+                switch_frame.grid(row=7, column=0, padx=5, sticky="nsew")
+                switch_frame.grid_rowconfigure(0, weight=1)
+                switch_frame.grid_columnconfigure((0,1,2), weight=1)
+                selected_mode = ctk.StringVar(value="call_marketing")
+
+                mode_label = ctk.CTkLabel(switch_frame,
+                                        text="Select run mode: ")
+                mode_label.grid(row=0, column=0, padx=5, sticky="nsew")
+
+                # Left radio button
+                radio_off = ctk.CTkRadioButton(switch_frame, text="Call Marketing", variable=selected_mode, value="call_marketing")
+                radio_off.grid(row=0, column=1, padx=5, sticky="nsew")
+
+                # Right radio button
+                radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing", variable=selected_mode, value="text_marketing")
+                radio_on.grid(row=0, column=2, padx=5, sticky="nsew")
+
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
-                                                command=lambda: self.trigger_tool(func, self.cleaner_file, self.file_paths, self.save_path),
+                                                command=lambda: self.trigger_tool(func, self.cleaner_file, self.file_paths, self.save_path, selected_mode.get()),
                                                 height=36,
                                                 width=240,
                                                 fg_color='#d99125',
@@ -419,7 +437,7 @@ class App(ctk.CTk):
                                                     size=18,
                                                     weight='bold'
                                                 ))
-                run_tool_button.grid(row=7, column=0, padx=10, pady=5)
+                run_tool_button.grid(row=8, column=0, padx=10, pady=5)
     
     def select_save_directory(self, frame: ctk.CTkFrame, func):
 
@@ -437,9 +455,27 @@ class App(ctk.CTk):
             self.save_path_check = True
 
             if self.input_file_check and self.save_path_check and self.cleaner_file:
+                switch_frame = ctk.CTkFrame(frame, fg_color="transparent")
+                switch_frame.grid(row=7, column=0, padx=5, sticky="nsew")
+                switch_frame.grid_rowconfigure(0, weight=1)
+                switch_frame.grid_columnconfigure((0,1,2), weight=1)
+                selected_mode = ctk.StringVar(value="call_marketing")
+
+                mode_label = ctk.CTkLabel(switch_frame,
+                                        text="Select run mode: ")
+                mode_label.grid(row=0, column=0, padx=5, sticky="nsew")
+
+                # Left radio button
+                radio_off = ctk.CTkRadioButton(switch_frame, text="Call Marketing", variable=selected_mode, value="call_marketing")
+                radio_off.grid(row=0, column=1, padx=5, sticky="nsew")
+
+                # Right radio button
+                radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing", variable=selected_mode, value="text_marketing")
+                radio_on.grid(row=0, column=2, padx=5, sticky="nsew")
+
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
-                                                command=lambda: self.trigger_tool(func, self.cleaner_file, self.file_paths, self.save_path),
+                                                command=lambda: self.trigger_tool(func, self.cleaner_file, self.file_paths, self.save_path, selected_mode.get()),
                                                 height=36,
                                                 width=240,
                                                 fg_color='#d99125',
@@ -450,7 +486,7 @@ class App(ctk.CTk):
                                                     size=18,
                                                     weight='bold'
                                                 ))
-                run_tool_button.grid(row=7, column=0, padx=10, pady=5)
+                run_tool_button.grid(row=8, column=0, padx=10, pady=5)
     
     def select_list_cleaner_file(self, frame: ctk.CTkFrame, func):
         self.cleaner_file = filedialog.askopenfilename(title="Select list cleaner file",
@@ -462,9 +498,27 @@ class App(ctk.CTk):
             cleaner_file_label.grid(row=2, column=0, padx=5, pady=5)
             self.cleaner_file_check = True
             if self.input_file_check and self.save_path_check and self.cleaner_file_check:
+                switch_frame = ctk.CTkFrame(frame, fg_color="transparent")
+                switch_frame.grid(row=7, column=0, padx=5, sticky="nsew")
+                switch_frame.grid_rowconfigure(0, weight=1)
+                switch_frame.grid_columnconfigure((0,1,2), weight=1)
+                selected_mode = ctk.StringVar(value="call_marketing")
+
+                mode_label = ctk.CTkLabel(switch_frame,
+                                        text="Select run mode: ")
+                mode_label.grid(row=0, column=0, padx=5, sticky="nsew")
+
+                # Left radio button
+                radio_off = ctk.CTkRadioButton(switch_frame, text="Call Marketing", variable=selected_mode, value="call_marketing")
+                radio_off.grid(row=0, column=1, padx=5, sticky="nsew")
+
+                # Right radio button
+                radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing", variable=selected_mode, value="text_marketing")
+                radio_on.grid(row=0, column=2, padx=5, sticky="nsew")
+
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
-                                                command=lambda: self.trigger_tool(func, self.cleaner_file, self.file_paths, self.save_path),
+                                                command=lambda: self.trigger_tool(func, self.cleaner_file, self.file_paths, self.save_path, selected_mode.get()),
                                                 height=36,
                                                 width=240,
                                                 fg_color='#d99125',
@@ -475,7 +529,7 @@ class App(ctk.CTk):
                                                     size=18,
                                                     weight='bold'
                                                 ))
-                run_tool_button.grid(row=7, column=0, padx=10, pady=5)
+                run_tool_button.grid(row=8, column=0, padx=10, pady=5)
 
     def tool_running_window(self):
         
@@ -729,7 +783,7 @@ class AutoDialerCleaner(ctk.CTkFrame):
         self.user_input = None
         self.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(8, weight=1)
+        self.grid_rowconfigure((7,8), weight=1)
 
         label = ctk.CTkLabel(self,
                              text="AutoDialer Cleanup Tool",
@@ -758,14 +812,14 @@ class AutoDialerCleaner(ctk.CTkFrame):
                                     fg_color='#5b5c5c',
                                     hover_color='#424343',
                                     command=lambda:self.select_files_to_clean(self))
-        files_to_process_button.grid(row=4, column=0, padx=5, pady=5, sticky="ns")
+        files_to_process_button.grid(row=3, column=0, padx=5, pady=5, sticky="ns")
 
         save_path_button = ctk.CTkButton(self,
                                     text="Save output files to",
                                     fg_color='#5b5c5c',
                                     hover_color='#424343',
                                     command=lambda:self.select_save_path(self))
-        save_path_button.grid(row=6, column=0, padx=5, pady=5, sticky="ns")
+        save_path_button.grid(row=5, column=0, padx=5, pady=5, sticky="ns")
 
         self.last_update_label = ctk.CTkLabel(self,
                                               text=None,
@@ -854,9 +908,8 @@ class AutoDialerCleaner(ctk.CTkFrame):
         self.files_to_clean = filedialog.askopenfilenames(title="Select files to clean",
                                                           filetypes=[("All Files", "*.*")])
         if self.files_to_clean:
-            files_to_clean_frame = ctk.CTkScrollableFrame(window,
-                                                          height=80)
-            files_to_clean_frame.grid(row=5, column=0, padx=5, pady=5, sticky="ew")
+            files_to_clean_frame = ctk.CTkScrollableFrame(window)
+            files_to_clean_frame.grid(row=4, column=0, padx=5, pady=5, sticky="ew")
             files_to_clean_frame.grid_columnconfigure(0, weight=1)
 
             for i, file in enumerate(self.files_to_clean):
@@ -874,11 +927,30 @@ class AutoDialerCleaner(ctk.CTkFrame):
                                            text=f"{self.save_path}",
                                            fg_color="transparent",
                                            wraplength=400)
-            save_path_label.grid(row=7, column=0, padx=5, pady=5)
+            save_path_label.grid(row=6, column=0, padx=5, pady=5)
             self.check_run()
 
     def check_run(self):
         if self.auth_code and self.files_to_clean and self.save_path:
+
+            switch_frame = ctk.CTkFrame(self, fg_color="transparent")
+            switch_frame.grid(row=7, column=0, padx=5, sticky="nsew")
+            switch_frame.grid_rowconfigure(0, weight=1)
+            switch_frame.grid_columnconfigure((0,1,2), weight=1)
+            selected_mode = ctk.StringVar(value="call_marketing")
+
+            mode_label = ctk.CTkLabel(switch_frame,
+                                      text="Select run mode: ")
+            mode_label.grid(row=0, column=0, padx=5, sticky="nsew")
+
+            # Left radio button
+            radio_off = ctk.CTkRadioButton(switch_frame, text="Call Marketing", variable=selected_mode, value="call_marketing")
+            radio_off.grid(row=0, column=1, padx=5, sticky="nsew")
+
+            # Right radio button
+            radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing", variable=selected_mode, value="text_marketing")
+            radio_on.grid(row=0, column=2, padx=5, sticky="nsew")
+
             run_tool_button = ctk.CTkButton(self,
                                             text='RUN TOOL',
                                             height=36,
@@ -891,7 +963,8 @@ class AutoDialerCleaner(ctk.CTkFrame):
                                             command=lambda:self.controller.trigger_tool(run_autodialer,
                                                                                         self.auth_code,
                                                                                         self.files_to_clean,
-                                                                                        self.save_path))
+                                                                                        self.save_path,
+                                                                                        selected_mode.get()))
             run_tool_button.grid(row=8, column=0, padx=10, pady=5)
 
     def update_list_cleaner(self):

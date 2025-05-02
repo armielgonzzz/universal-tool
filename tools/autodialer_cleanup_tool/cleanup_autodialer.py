@@ -197,55 +197,144 @@ def get_id_set(cleaner_file: str) -> set:
     valid_id_set = set(valid_numbers)
     return valid_id_set
 
-def main(auth_code: str, list_files: tuple, save_path: str):
+def upper_first(text):
+    if pd.isna(text):
+        return text
+    words = text.split()
+    return " ".join([word.title() if not re.fullmatch(r'(?i)(i{1,3}|iv|v?i{0,3}|ix|x{1,3}|xl|l{1,3}|xc|c{1,3}|cd|d{1,3}|cm|m{1,4})', word) else word.upper() for word in words])
+
+def export_text_marketing(df: pd.DataFrame, file_path: str, save_path: str):
+
+    filename = os.path.basename(file_path)
+    if filename.endswith('.csv'):
+        df.to_csv(f"{save_path}/(Autodialer - Text Marketing) {filename}", index=False)
+    
+    elif filename.endswith('.xlsx'):
+        df.to_excel(f"{save_path}/(Autodialer - Text Marketing) {filename}", index=False)
+
+    elif filename.endswith('.xlsb'):
+        df.to_excel(f"{save_path}/(Autodialer - Text Marketing) {filename.split('.')[0]}.xlsx", index=False)
+    
+    else:
+        print("No output generated. Invalid file format")
+
+def text_marketing_melt(df: pd.DataFrame):
+
+    columns_to_transform = ['First Name', 'Owner']
+    id_vars = [
+        'row_order',
+        'date_created',
+        'is_latest_offer',
+        'First Name',
+        'Total Value - High ($)',
+        'County',
+        'State',
+        'Serial Number',
+        'Owner',
+        'Contact Type'
+    ]
+    selected_columns = [
+        'date_created',
+        'is_latest_offer',
+        'First Name',
+        'Total Value - High ($)',
+        'County',
+        'State',
+        'Serial Number',
+        'Owner',
+        'Contact Type',
+        'phone1',
+        'phone2',
+        'phone3',
+        'phone4',
+        'phone5'
+    ]
+
+    df = df[selected_columns]
+    df['row_order'] = df.index
+    df[columns_to_transform] = df[columns_to_transform].map(upper_first)
+    df_melted = df.melt(id_vars=id_vars, 
+                        value_vars=['phone1', 'phone2', 'phone3', 'phone4', 'phone5'],
+                        var_name='Phone Index', 
+                        value_name='Phone Number')
+    df_melted = df_melted.dropna(subset=['Phone Number'])
+    df_melted['Phone Index'] = df_melted['Phone Index'].str.extract('(\d)').astype(int)
+    df_melted = df_melted.sort_values(by=['row_order', 'Phone Index'])
+    df_melted = df_melted.drop(columns='row_order').reset_index(drop=True)
+    df_melted['Total Value - High ($)'] = df_melted['Total Value - High ($)'].astype('Int64')
+    df_melted['Phone Number'] = df_melted['Phone Number'].astype('Int64')
+    export_df = df_melted[[
+        'date_created',
+        'is_latest_offer',
+        'Phone Index',
+        'Phone Number',
+        'First Name',
+        'Total Value - High ($)',
+        'County',
+        'State',
+        'Serial Number',
+        'Owner',
+        'Contact Type'
+    ]]
+
+    return export_df
+
+def main(auth_code: str, list_files: tuple, save_path: str, run_mode: str):
 
     try:
-        
-        print("Preparing List Cleaner")
-        local_list_cleaner_path = './data/List Cleaner.xlsx'
-        dropbox_list_cleaner_path = '/List Cleaner & JC DNC/New List Cleaner.xlsx'
+        if run_mode == 'text_marketing':
+            for file in list_files:
+                print("Transforming files")
+                df = read_file(file)
+                output_df = text_marketing_melt(df)
+                export_text_marketing(output_df, file, save_path)
 
-        extract_list_cleaner_file(auth_code, local_list_cleaner_path, dropbox_list_cleaner_path)
+        else:
+            print("Preparing List Cleaner")
+            local_list_cleaner_path = './data/List Cleaner.xlsx'
+            dropbox_list_cleaner_path = '/List Cleaner & JC DNC/New List Cleaner.xlsx'
 
-        valid_phone_set = get_phone_set(local_list_cleaner_path)
-        valid_id_set = get_id_set(local_list_cleaner_path)
-        disposition_set, months_set = read_cm_live_db()
-        
-        for list_file in list_files:
+            extract_list_cleaner_file(auth_code, local_list_cleaner_path, dropbox_list_cleaner_path)
 
-            print(f"Processing file {os.path.basename(list_file)}")
-            list_df = read_file(list_file)
-
-            # Convert phone numbers to int
-            phone_columns = ['phone1', 'phone2', 'phone3', 'phone4', 'phone5']
-            list_df[phone_columns] = (
-                list_df[phone_columns]
-                .apply(pd.to_numeric, errors='coerce')
-                .astype('Int64')
-            )
-
-            # Search phones in cleaner file
-            output_df = list_df[~list_df[phone_columns].isin(valid_phone_set).any(axis=1)]
-
-            # Remove Company contact type
-            column_name = next((col for col in output_df.columns if col.strip().lower() == 'contact_type'), None)
-            if column_name:
-                output_df = output_df[output_df[column_name].str.lower() != 'company']
+            valid_phone_set = get_phone_set(local_list_cleaner_path)
+            valid_id_set = get_id_set(local_list_cleaner_path)
+            disposition_set, months_set = read_cm_live_db()
             
-            # Remove duplicates
-            removed_dupes_df = remove_phone_dupes(output_df)
+            for list_file in list_files:
 
-            # Clean df based on contact id and deal id
-            clean_contact_deal_df = clean_contact_id_deal_id(removed_dupes_df, valid_id_set)
+                print(f"Processing file {os.path.basename(list_file)}")
+                list_df = read_file(list_file)
 
-            # Check if has existing dispositions
-            clean_dispo_df = clean_contact_deal_df[~clean_contact_deal_df[phone_columns].isin(disposition_set).any(axis=1)]
+                # Convert phone numbers to int
+                phone_columns = ['phone1', 'phone2', 'phone3', 'phone4', 'phone5']
+                list_df[phone_columns] = (
+                    list_df[phone_columns]
+                    .apply(pd.to_numeric, errors='coerce')
+                    .astype('Int64')
+                )
 
-            # Check if within 6 months for specific dispositions
-            final_df = clean_dispo_df[~clean_dispo_df[phone_columns].isin(months_set).any(axis=1)]
+                # Search phones in cleaner file
+                output_df = list_df[~list_df[phone_columns].isin(valid_phone_set).any(axis=1)]
 
-            # Export to save path
-            export_output(final_df, list_file, save_path)
+                # Remove Company contact type
+                column_name = next((col for col in output_df.columns if col.strip().lower() == 'contact_type'), None)
+                if column_name:
+                    output_df = output_df[output_df[column_name].str.lower() != 'company']
+                
+                # Remove duplicates
+                removed_dupes_df = remove_phone_dupes(output_df)
+
+                # Clean df based on contact id and deal id
+                clean_contact_deal_df = clean_contact_id_deal_id(removed_dupes_df, valid_id_set)
+
+                # Check if has existing dispositions
+                clean_dispo_df = clean_contact_deal_df[~clean_contact_deal_df[phone_columns].isin(disposition_set).any(axis=1)]
+
+                # Check if within 6 months for specific dispositions
+                final_df = clean_dispo_df[~clean_dispo_df[phone_columns].isin(months_set).any(axis=1)]
+
+                # Export to save path
+                export_output(final_df, list_file, save_path)
         
         print("Sucessfully processed all files")
 
