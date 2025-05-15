@@ -55,6 +55,28 @@ def extract_list_cleaner_file(auth_code: str, local_path: str, dropbox_path: str
     with open(local_path, 'wb') as f:
         f.write(response.content)
 
+def download_list_cleaner(auth_code: str) -> None:
+    global dnc_df, mvp_df, db_id_df, time_df, conv_df
+
+    print("Downloading list cleaner files")
+
+    sheet_names = [
+        "CCM+CH+MVPC+MVPT+JC+RC+PD",
+        "DNC",
+        "UniqueDB ID",
+        "CallOut-14d+TextOut-30d",
+        "PDConvDup"
+    ]
+
+    for sheet_name in sheet_names:
+        dropbox_path = f"/List Cleaner & JC DNC/{sheet_name}.csv"
+        local_file_path = f"./data/{sheet_name}.csv"
+        dbx = dropbox.Dropbox(auth_code)
+        metadata, response = dbx.files_download(dropbox_path)
+
+        with open(local_file_path, 'wb') as f:
+            f.write(response.content)
+
 def read_cm_live_db() -> 'tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame | None]':
 
     try:
@@ -167,31 +189,19 @@ def clean_contact_id_deal_id(df: pd.DataFrame, id_set: set) -> pd.DataFrame:
 
     return final_df
 
-def get_phone_set(cleaner_file: str) -> set:
+def get_phone_set() -> set:
 
-    list_cleaner_df = pd.read_excel(cleaner_file,
-                                    sheet_name=['CCM+CH+MVPC+MVPT+JC+RC+PD',
-                                                'DNC',
-                                                'CallOut-14d+TextOut-30d',
-                                                'PDConvDup',
-                                                'FromOtherList'],
-                                    header=None)
-    
-    final_list_cleaner_df = pd.concat([list_cleaner_df['CCM+CH+MVPC+MVPT+JC+RC+PD'],
-                                        list_cleaner_df['DNC'],
-                                        list_cleaner_df['CallOut-14d+TextOut-30d'],
-                                        list_cleaner_df['PDConvDup'],
-                                        list_cleaner_df['FromOtherList']])
+    data_path = './data'
+    file_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'CallOut-14d+TextOut-30d.csv', 'PDConvDup.csv']
+    final_list_cleaner_df = pd.concat([pd.read_csv(os.path.join(data_path, file), low_memory=False, header=None) for file in file_list], ignore_index=True)
 
     # Clean up the list and filter for valid phone numbers
     valid_phone_set = set(int(phone) for phone in map(str, final_list_cleaner_df[0].tolist()) if is_valid_phone(phone))
     return valid_phone_set
 
-def get_id_set(cleaner_file: str) -> set:
+def get_id_set() -> set:
 
-    unique_db_df_list = pd.read_excel(cleaner_file,
-                                      sheet_name=['UniqueDB ID'])
-    unique_db_df = unique_db_df_list['UniqueDB ID']
+    unique_db_df = pd.read_csv('./data/UniqueDB ID.csv', low_memory=False)
     valid_numbers = pd.to_numeric(unique_db_df['Deal - Unique Database ID'], errors='coerce')
     valid_numbers = valid_numbers.dropna().astype(int)
     valid_id_set = set(valid_numbers)
@@ -282,14 +292,10 @@ def text_marketing_melt(df: pd.DataFrame):
 def main(auth_code: str, list_files: tuple, save_path: str, run_mode: str):
 
     try:
-        print("Preparing List Cleaner")
-        local_list_cleaner_path = './data/List Cleaner.xlsx'
-        dropbox_list_cleaner_path = '/List Cleaner & JC DNC/New List Cleaner.xlsx'
+        download_list_cleaner(auth_code)
 
-        extract_list_cleaner_file(auth_code, local_list_cleaner_path, dropbox_list_cleaner_path)
-
-        valid_phone_set = get_phone_set(local_list_cleaner_path)
-        valid_id_set = get_id_set(local_list_cleaner_path)
+        valid_phone_set = get_phone_set()
+        valid_id_set = get_id_set()
         disposition_set, months_set = read_cm_live_db()
         
         for list_file in list_files:

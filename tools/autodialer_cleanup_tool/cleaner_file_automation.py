@@ -27,22 +27,31 @@ APP_SECRET = os.getenv('DROPBOX_APP_SECRET')
 #     # Save the workbook after processing all sheets
 #     excel_workbook.save(excel_path)
 
-def create_outbound_sheet(excel_path: str):
-    print("Saving all sheets")
+def save_all_files():
+    print("Saving all CSV files")
+    global mvp_df, dnc_df, conv_df, db_id_df
     final_df = pd.DataFrame(sum(outbound_df_list, []))
     final_df.drop_duplicates(inplace=True)
-    with pd.ExcelWriter(excel_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        final_df.to_excel(writer, sheet_name='CallOut-14d+TextOut-30d', index=False, header=False)
+    
+    # with pd.ExcelWriter(excel_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    #     final_df.to_excel(writer, sheet_name='CallOut-14d+TextOut-30d', index=False, header=False)
+
+    final_df.to_csv('./data/CallOut-14d+TextOut-30d.csv', index=False, header=None)
+    mvp_df.drop_duplicates().dropna().to_csv('./data/CCM+CH+MVPC+MVPT+JC+RC+PD.csv', index=False, header=None)
+    dnc_df.drop_duplicates().dropna().to_csv('./data/DNC.csv', index=False, header=None)
+    conv_df.drop_duplicates().dropna().to_csv('./data/PDConvDup.csv', index=False, header=None)
+    db_id_df.drop_duplicates().dropna().to_csv('./data/UniqueDB ID.csv', index=False, header=None)
 
 def get_update_df(update_df: pd.DataFrame, sheet_name: str):
-    sheet = excel_workbook[sheet_name]
+    pass
+    # sheet = excel_workbook[sheet_name]
 
-    # Append each DataFrame row to the sheet
-    for row in update_df.itertuples(index=False, name=None):
-        sheet.append(row)
+    # # Append each DataFrame row to the sheet
+    # for row in update_df.itertuples(index=False, name=None):
+    #     sheet.append(row)
 
-    # Save the workbook after processing all sheets
-    excel_workbook.save('./data/List Cleaner.xlsx')
+    # # Save the workbook after processing all sheets
+    # excel_workbook.save('./data/List Cleaner.xlsx')
 
 def dropbox_authentication() -> str:
     auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(APP_KEY, APP_SECRET)
@@ -51,11 +60,25 @@ def dropbox_authentication() -> str:
     if authorize_url:
         webbrowser.open(authorize_url)
 
-def export_to_dropbox(list_cleaner_file_path, dbx, dropbox_list_cleaner_path) -> None:
-    with open(list_cleaner_file_path, 'rb') as f:
-        print("Uploading to List Cleaner File to Dropbox")
-        dbx.files_upload(f.read(), dropbox_list_cleaner_path, mode=dropbox.files.WriteMode.overwrite)
-    print("Sucessfully uploaded Updated List Cleaner File to Dropbox")
+def export_to_dropbox(root_path: str, local_data_path: str, dbx: dropbox.Dropbox) -> None:
+
+    print("Uploading to List Cleaner Files to Dropbox")
+    sheet_names = [
+        "CCM+CH+MVPC+MVPT+JC+RC+PD",
+        "DNC",
+        "UniqueDB ID",
+        "CallOut-14d+TextOut-30d",
+        "PDConvDup"
+    ]
+
+    for sheet_name in sheet_names:
+        dropbox_path = f"{root_path}/{sheet_name}.csv"
+        local_file_path = f"{local_data_path}/{sheet_name}.csv"
+
+        with open(local_file_path, 'rb') as f:
+            dbx.files_upload(f.read(), dropbox_path, mode=dropbox.files.WriteMode.overwrite)
+
+    print("Sucessfully uploaded Updated List Cleaner Files to Dropbox")
 
 def read_dropbox_file(path: str, dbx):
     metadata, response = dbx.files_download(path)
@@ -68,6 +91,7 @@ def read_dropbox_file(path: str, dbx):
     
 def add_pd_phones(path: str, dbx):
     print("Processing Pipedrive Phones Export")
+    global mvp_df
     df = read_dropbox_file(path, dbx)
     df.drop(columns=['Deal - ID', 'Deal - Last RVM Date', 'Deal - RVM Dates'],
             axis=1,
@@ -101,8 +125,9 @@ def add_pd_phones(path: str, dbx):
     
     result_df.drop_duplicates(subset=['Phone Number'], inplace=True)
 
-    get_update_df(result_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
-
+    # get_update_df(result_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    result_df.columns = [0]
+    mvp_df = pd.concat([mvp_df, result_df], ignore_index=True)
     result_df = None
     
     # # Use ExcelWriter to append the DataFrame to the existing file
@@ -112,6 +137,7 @@ def add_pd_phones(path: str, dbx):
 
 def add_unique_db(path: str, dbx):
     print("Processing Unique Database ID")
+    global db_id_df
     df = read_dropbox_file(path, dbx)
     # Now handle the "Deal - Unique Database ID" column similarly
     deal_column = 'Deal - Unique Database ID'
@@ -129,11 +155,13 @@ def add_unique_db(path: str, dbx):
 
     # Create a DataFrame for the Deal IDs
     deal_df = pd.DataFrame({'Deal - Unique Database ID': all_deals})
-
+    deal_df['Deal - Unique Database ID'] = deal_df['Deal - Unique Database ID'].apply(lambda x: round(int(float(x))) if pd.notna(x) else x)
+    deal_df['Deal - Unique Database ID'] = deal_df['Deal - Unique Database ID'].astype('Int64')
     deal_df.drop_duplicates(subset=['Deal - Unique Database ID'], inplace=True)
 
-    get_update_df(deal_df, 'UniqueDB ID')
-
+    # get_update_df(deal_df, 'UniqueDB ID')
+    deal_df.columns = [0]
+    db_id_df = pd.concat([db_id_df, deal_df], ignore_index=True)
     deal_df = None
 
     # # Use ExcelWriter to append the DataFrame to the existing file
@@ -143,6 +171,7 @@ def add_unique_db(path: str, dbx):
 
 def add_pd_conv_dup(path: str, dbx):
     print("Processing Pipedrive Conversion Duplicate")
+    global conv_df
     df = read_dropbox_file(path, dbx)
     phone_columns = [f'Person - Phone {i}' for i in range(2, 11)]
     phone_columns.extend(['Person - Phone - Work', 'Person - Phone - Home', 'Person - Phone - Mobile', 'Person - Phone - Other', 'Person - Archive - Phone'])
@@ -171,12 +200,14 @@ def add_pd_conv_dup(path: str, dbx):
     
     result_df.drop_duplicates(subset=['Phone Number'], inplace=True)
 
-    get_update_df(result_df, 'PDConvDup')
-
+    # get_update_df(result_df, 'PDConvDup')
+    result_df.columns = [0]
+    conv_df = pd.concat([conv_df, result_df], ignore_index=True)
     result_df = None
 
 def add_remove_list(path: str, dbx):
     print("Processing Pipedrive Remove From List")
+    global dnc_df
     df = read_dropbox_file(path, dbx)
     phone_columns = [f'Person - Phone {i}' for i in range(2, 11)]
     phone_columns.extend(['Person - Phone - Work', 'Person - Phone - Home', 'Person - Phone - Mobile', 'Person - Phone - Other', 'Person - Archive - Phone'])
@@ -205,7 +236,9 @@ def add_remove_list(path: str, dbx):
     
     result_df.drop_duplicates(subset=['Phone Number'], inplace=True)
 
-    get_update_df(result_df, 'DNC')
+    # get_update_df(result_df, 'DNC')
+    result_df.columns = [0]
+    dnc_df = pd.concat([dnc_df, result_df], ignore_index=True)
     result_df = None
 
     # book = load_workbook(excel_file)
@@ -228,6 +261,7 @@ def add_remove_list(path: str, dbx):
 
 def add_jc(path: str, dbx):
     print("Processing Just Call")
+    global mvp_df
     metadata, response = dbx.files_download(path)
     df = pd.read_excel(BytesIO(response.content),
                        sheet_name="Messages Details",
@@ -246,7 +280,9 @@ def add_jc(path: str, dbx):
     received_df.drop_duplicates(subset=['Client Number'], inplace=True)
     sent_df.drop_duplicates(subset=['Client Number'], inplace=True)
 
-    get_update_df(received_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    # get_update_df(received_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    received_df.columns = [0]
+    mvp_df = pd.concat([mvp_df, received_df], ignore_index=True)
 
     received_df = None
     # get_update_df(sent_df, 'JCSMS-Sent')
@@ -263,10 +299,13 @@ def add_jc(path: str, dbx):
 
 def add_sly(path: str, dbx):
     print("Processing Sly")
+    global dnc_df
     df = read_dropbox_file(path, dbx)
     df.drop_duplicates(inplace=True)
 
-    get_update_df(df, 'DNC')
+    # get_update_df(df, 'DNC')
+    df.columns = [0]
+    dnc_df = pd.concat([dnc_df, df], ignore_index=True)
 
     df = None
 
@@ -276,6 +315,7 @@ def add_sly(path: str, dbx):
 
 def add_contact_center(df: pd.DataFrame, dbx):
     print("Processing Contact Center")
+    global mvp_df
     fourteen_days_ago = pd.to_datetime('today', format='mixed', dayfirst=False) - timedelta(days=14)
     df['Date'] = pd.to_datetime(df['Date'], format='mixed', dayfirst=False)
     df = df[df['Media Type Name'] != 'E-Mail']
@@ -285,7 +325,9 @@ def add_contact_center(df: pd.DataFrame, dbx):
     inbound_df.drop_duplicates(inplace=True)
     outbound_df.drop_duplicates(inplace=True)
 
-    get_update_df(inbound_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    # get_update_df(inbound_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    inbound_df.columns = [0]
+    mvp_df = pd.concat([mvp_df, inbound_df], ignore_index=True)
     inbound_df = None
     # get_update_df(outbound_df, 'Outbound-2weeks')
 
@@ -308,7 +350,10 @@ def add_contact_history_inbound(df: pd.DataFrame, dbx):
     inbound_df.drop_duplicates(inplace=True)
     outbound_df.drop_duplicates(inplace=True)
 
-    get_update_df(inbound_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    # get_update_df(inbound_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    global mvp_df
+    inbound_df.columns = [0]
+    mvp_df = pd.concat([mvp_df, inbound_df], ignore_index=True)
     inbound_df = None
     # get_update_df(outbound_df, 'CallOut-14d+TextOut-30d')
     outbound_df_list.append(outbound_df.values.tolist())
@@ -325,7 +370,10 @@ def add_mvp_calls_inbound(df: pd.DataFrame, dbx):
     inbound_df.drop_duplicates(inplace=True)
     outbound_df.drop_duplicates(inplace=True)
 
-    get_update_df(inbound_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    # get_update_df(inbound_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    global mvp_df
+    inbound_df.columns = [0]
+    mvp_df = pd.concat([mvp_df, inbound_df], ignore_index=True)
     inbound_df = None
     # get_update_df(outbound_df, 'CallOut-14d+TextOut-30d')
     outbound_df_list.append(outbound_df.values.tolist())
@@ -359,7 +407,10 @@ def add_mvp(df: pd.DataFrame, dbx):
         ['Sender Number']
     ].drop_duplicates()
 
-    get_update_df(inbound_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    # get_update_df(inbound_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    global mvp_df
+    inbound_df.columns = [0]
+    mvp_df = pd.concat([mvp_df, inbound_df], ignore_index=True)
     inbound_df = None
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
     #     final_df.to_excel(writer, sheet_name='MVPLogs', index=False, header=False)
@@ -385,7 +436,10 @@ def add_rc(df: pd.DataFrame, dbx):
     received_df.drop_duplicates(subset=['From'], inplace=True)
     sent_df.drop_duplicates(subset=['To'], inplace=True)
 
-    get_update_df(received_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    # get_update_df(received_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
+    global mvp_df
+    received_df.columns = [0]
+    mvp_df = pd.concat([mvp_df, received_df], ignore_index=True)
     received_df = None
     # get_update_df(sent_df, 'RCSMS-Sent')
 
@@ -400,10 +454,13 @@ def add_rc(df: pd.DataFrame, dbx):
 
 def add_c3(df: pd.DataFrame, dbx):
     print("Processing C3")
+    global dnc_df
     df['Contact Information'] = df['Contact Information'].astype(str)
     df['Contact Information'] = df['Contact Information'].str.replace(r'\D', '', regex=True)
     output_df = df[df['Contact Information'].str.len() == 10][['Contact Information']].drop_duplicates(subset=['Contact Information'])
-    get_update_df(output_df, 'DNC')
+    # get_update_df(output_df, 'DNC')
+    output_df.columns = [0]
+    dnc_df = pd.concat([dnc_df, output_df], ignore_index=True)
     output_df = None
 
 def get_latest_file(folder_path, dbx):
@@ -427,7 +484,7 @@ def get_latest_file(folder_path, dbx):
         print(f"Error getting latest file from {folder_path}: {e}")
         return None
 
-def load_sheets(root_path, dbx, conversion_dict, local_list_cleaner_path):
+def load_sheets(root_path, dbx, conversion_dict):
     try:
         # List files and folders in the current path
         response = dbx.files_list_folder(root_path)
@@ -446,7 +503,7 @@ def load_sheets(root_path, dbx, conversion_dict, local_list_cleaner_path):
                         file_type_function(file_path, dbx)
                         
             elif isinstance(entry, dropbox.files.FolderMetadata):
-                load_sheets(entry.path_lower, dbx, conversion_dict, local_list_cleaner_path)
+                load_sheets(entry.path_lower, dbx, conversion_dict)
 
         # Handle pagination
         while response.has_more:
@@ -466,7 +523,7 @@ def load_sheets(root_path, dbx, conversion_dict, local_list_cleaner_path):
                             file_type_function(file_path, dbx)
                             
                 elif isinstance(entry, dropbox.files.FolderMetadata):
-                    load_sheets(entry.path_lower, dbx, conversion_dict, local_list_cleaner_path)
+                    load_sheets(entry.path_lower, dbx, conversion_dict)
 
     except dropbox.exceptions.ApiError as e:
         print(f"Error accessing path '{root_path}': {e}")
@@ -572,14 +629,42 @@ def concat_c3(path: str, dbx):
         combined_df = pd.concat(df_list)
         return combined_df
 
-def create_local_list_cleaner(dropbox_path: str, local_path: str, dbx: dropbox.Dropbox) -> None:
+def create_local_list_cleaner(local_data_path: str, root_path: str, dbx: dropbox.Dropbox) -> None:
+    global dnc_df, mvp_df, db_id_df, time_df, conv_df
 
     print("Creating new local list cleaner file")
-    metadata, response = dbx.files_download(dropbox_path)
-    
-    # Write the content to a local file
-    with open(local_path, 'wb') as f:
-        f.write(response.content)
+
+    sheet_names = [
+        "CCM+CH+MVPC+MVPT+JC+RC+PD",
+        "DNC",
+        "UniqueDB ID",
+        "CallOut-14d+TextOut-30d",
+        "PDConvDup"
+    ]
+
+    for sheet_name in sheet_names:
+        dropbox_path = f"{root_path}/{sheet_name}.csv"
+        local_file_path = f"{local_data_path}/{sheet_name}.csv"
+        metadata, response = dbx.files_download(dropbox_path)
+
+        with open(local_file_path, 'wb') as f:
+            f.write(response.content)
+
+        df = pd.read_csv(local_file_path, low_memory=False, header=None)
+
+        match sheet_name:
+            case "CCM+CH+MVPC+MVPT+JC+RC+PD":
+                mvp_df = df
+            case "DNC":
+                dnc_df = df
+            case "UniqueDB ID":
+                db_id_df = df
+            case "CallOut-14d+TextOut-30d":
+                time_df = df
+            case "PDConvDup":
+                conv_df = df
+            case _:
+                print(f"Unknown sheet: {sheet_name}")
 
 def check_user_folder_paths(dbx: dropbox.Dropbox):
     result = dbx.files_list_folder(path="", recursive=True)
@@ -589,7 +674,7 @@ def check_user_folder_paths(dbx: dropbox.Dropbox):
                 return entry.path_display
             
 def update_latest_cleaner_file_label(app_window: ctk.CTkFrame, dbx: dropbox.Dropbox):
-    metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/New List Cleaner.xlsx')
+    metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/DNC.csv')
     last_modified_date = metadata.client_modified
     app_window.last_update_label.configure(text=f'List cleaner file last update: {last_modified_date}')
 
@@ -612,12 +697,11 @@ def main(auth_code: str, app_window: ctk.CTkFrame):
         dbx = dropbox.Dropbox(auth_code)
 
         root_path = check_user_folder_paths(dbx)
-        global outbound_df_list, excel_workbook
+        global outbound_df_list
         outbound_df_list = []
         
         # Create constant variables
-        local_list_cleaner_path = './data/List Cleaner.xlsx'
-        dropbox_list_cleaner_path = f'{root_path}/New List Cleaner.xlsx'
+        local_data_path = './data'
         conversion_dict = {
             "jc": add_jc,
             "pd_db": add_unique_db,
@@ -628,11 +712,10 @@ def main(auth_code: str, app_window: ctk.CTkFrame):
         }
 
         # Download and replace local list cleaner file
-        create_local_list_cleaner(dropbox_list_cleaner_path, local_list_cleaner_path, dbx)
-        excel_workbook = load_workbook(local_list_cleaner_path)
+        create_local_list_cleaner(local_data_path, root_path, dbx)
 
         # Update the list cleaner file
-        load_sheets(root_path, dbx, conversion_dict, local_list_cleaner_path)
+        load_sheets(root_path, dbx, conversion_dict)
 
         # Process c3 folder files
         c3_df = concat_c3(f'{root_path}/c3', dbx)
@@ -662,13 +745,13 @@ def main(auth_code: str, app_window: ctk.CTkFrame):
         # append_to_multiple_sheets(local_list_cleaner_path)
 
         # Create and replace the outbound sheet
-        create_outbound_sheet(local_list_cleaner_path)
+        save_all_files()
 
-        # Drop all duplicates of list cleaner file
-        drop_list_cleaner_dupes(local_list_cleaner_path)
+        # # Drop all duplicates of list cleaner file
+        # drop_list_cleaner_dupes(local_list_cleaner_path)
 
         # Upload to dropbox
-        export_to_dropbox(local_list_cleaner_path, dbx, dropbox_list_cleaner_path)
+        export_to_dropbox(root_path, local_data_path, dbx)
 
         # Update label
         update_latest_cleaner_file_label(app_window, dbx)

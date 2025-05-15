@@ -32,7 +32,7 @@ def center_new_window(main_window: ctk.CTkFrame,
         main_y = main_window.winfo_rooty()
 
         # Main window dimensions
-        main_width = 800
+        main_width = 1000
         main_height = 650
 
         # Update idle task to avoid bugs in changing geometry
@@ -76,7 +76,7 @@ class App(ctk.CTk):
 
         # Configure window
         self.title("Lead Management Tools")
-        self.geometry(center_main_window(self, 800, 650))
+        self.geometry(center_main_window(self, 1000, 650))
         self.resizable(False, False)
 
         # Configure grid layout (4x4)
@@ -833,7 +833,7 @@ class AutoDialerCleaner(ctk.CTkFrame):
         if oauth_result.access_token:
             self.auth_code = oauth_result.access_token
             dbx = dropbox.Dropbox(oauth_result.access_token)
-            metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/New List Cleaner.xlsx')
+            metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/DNC.csv')
             last_modified_date = metadata.client_modified
             utc_time = last_modified_date.replace(tzinfo=ZoneInfo("UTC"))
             cst_time = utc_time.astimezone(ZoneInfo("America/Chicago"))
@@ -936,7 +936,7 @@ class AutoDialerCleaner(ctk.CTkFrame):
             switch_frame = ctk.CTkFrame(self, fg_color="transparent")
             switch_frame.grid(row=7, column=0, padx=5, sticky="nsew")
             switch_frame.grid_rowconfigure(0, weight=1)
-            switch_frame.grid_columnconfigure((0,1,2), weight=1)
+            switch_frame.grid_columnconfigure((0,1,2,3), weight=1)
             selected_mode = ctk.StringVar(value="call_marketing")
 
             mode_label = ctk.CTkLabel(switch_frame,
@@ -948,8 +948,11 @@ class AutoDialerCleaner(ctk.CTkFrame):
             radio_off.grid(row=0, column=1, padx=5, sticky="nsew")
 
             # Right radio button
-            radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing", variable=selected_mode, value="text_marketing")
+            radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing - Raw Cleaning", variable=selected_mode, value="text_marketing")
             radio_on.grid(row=0, column=2, padx=5, sticky="nsew")
+
+            re_cleaning_button = ctk.CTkRadioButton(switch_frame, text="Text Marketing - Re-Cleaning", variable=selected_mode, value="recleaning")
+            re_cleaning_button.grid(row=0, column=3, padx=5, sticky="nsew")
 
             run_tool_button = ctk.CTkButton(self,
                                             text='RUN TOOL',
