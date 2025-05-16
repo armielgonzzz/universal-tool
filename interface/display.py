@@ -195,6 +195,8 @@ class App(ctk.CTk):
         self.clicked_button_id = ctk.IntVar()
         self.current_frame = None
         self.input_file_check, self.save_path_check = False, False
+        self.APP_KEY = os.getenv('DROPBOX_APP_KEY')
+        self.APP_SECRET = os.getenv('DROPBOX_APP_SECRET')
         self.show_frame(InitialFrame)
 
     ##################
@@ -346,9 +348,87 @@ class App(ctk.CTk):
     #                            #
     ##############################
 
+    def get_latest_update(self, auth_code):
+
+        auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(self.APP_KEY, self.APP_SECRET)   
+        oauth_result = auth_flow.finish(auth_code)
+        if oauth_result.access_token:
+            self.auth_code = oauth_result.access_token
+            dbx = dropbox.Dropbox(oauth_result.access_token)
+            metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/DNC.csv')
+            last_modified_date = metadata.client_modified
+            utc_time = last_modified_date.replace(tzinfo=ZoneInfo("UTC"))
+            cst_time = utc_time.astimezone(ZoneInfo("America/Chicago"))
+            self.last_update_label.configure(text=f'List cleaner file last update: {cst_time.strftime("%Y-%m-%d %H:%M:%S %Z")}')
+    
+    def authentication_result_window(self):
+        authentication_result = ctk.CTkToplevel()
+        authentication_result.resizable(False, False)
+        authentication_result.geometry("400x200")
+        authentication_result.grid_rowconfigure(0, weight=1)
+        authentication_result.grid_columnconfigure(0, weight=1)
+        authentication_result.attributes('-topmost', True)
+        authentication_result.title("Run Tool")
+
+        tool_run_label = ctk.CTkLabel(authentication_result,
+                                      text="SUCCESSFULLY Authenticated Dropbox Code" if self.auth_code else "Authentication FAILED",
+                                      wraplength=300,
+                                      font=ctk.CTkFont(
+                                          size=14,
+                                          weight='normal'))
+        tool_run_label.grid(row=0, column=0, padx=10, pady=(15, 5), sticky="nsew")
+        tool_run_button = ctk.CTkButton(authentication_result,
+                                        text="OK",
+                                        fg_color='#5b5c5c',
+                                        hover_color='#424343',
+                                        command=lambda:authentication_result.destroy())
+        tool_run_button.grid(row=1, column=0, padx=10, pady=(5, 15))
+
+
+    def authenticate_dropbox(self, tool_window):
+        def submit_action(window, tool_window):
+            user_input = input_field.get()
+            if user_input:
+                self.user_input = user_input
+                self.get_latest_update(self.user_input)
+                window.destroy()
+                self.authentication_result_window()
+
+        # Create the authentication frame (a new top-level window)
+        authentication_frame = ctk.CTkToplevel(self)
+        authentication_frame.resizable(False, False)
+        authentication_frame.geometry("470x180")
+        authentication_frame.grid_columnconfigure(0, weight=1)
+        authentication_frame.grid_rowconfigure((2), weight=1)  # Adjust grid row configuration
+        authentication_frame.attributes('-topmost', True)
+        authentication_frame.title("Dropbox Authentication")
+
+        # Button to open authentication link
+        open_link = ctk.CTkButton(authentication_frame,
+                                text="Open Authentication Link",
+                                fg_color='#5b5c5c',
+                                hover_color='#424343',
+                                command=lambda: dropbox_authentication())
+        open_link.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+
+        input_field = ctk.CTkEntry(authentication_frame, placeholder_text="Enter the value here")
+        input_field.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
+
+        submit_button = ctk.CTkButton(authentication_frame,
+                                      text="Submit",
+                                      fg_color='#d99125',
+                                      hover_color='#ae741e',
+                                      text_color='#141414',
+                                      corner_radius=50,
+                                      font=ctk.CTkFont(size=18, weight='bold'),
+                                      command=lambda: submit_action(authentication_frame, tool_window))
+        submit_button.grid(row=2, column=0, padx=10, pady=20, sticky='nsew')
+
     def display_phone_clean_tool(self):
 
         self.input_file_check, self.save_path_check, self.cleaner_file_check = False, False, False
+        self.auth_code = None
+        self.user_input = None
 
         self.current_frame = ctk.CTkFrame(self.tool_window_frame)
         self.current_frame.grid_rowconfigure((7,8), weight=1)
@@ -364,10 +444,10 @@ class App(ctk.CTk):
         label.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
 
         update_cleaner_button = ctk.CTkButton(self.current_frame,
-                                              text="Select list cleaner file",
+                                              text="Authenticate Dropbox",
                                               fg_color='#5b5c5c',
                                               hover_color='#424343',
-                                              command=lambda:self.select_list_cleaner_file(frame=self.current_frame, func=run_clean_up))
+                                              command=lambda:self.authenticate_dropbox(self))
         update_cleaner_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
         
         select_file_button = ctk.CTkButton(self.current_frame,
@@ -383,6 +463,11 @@ class App(ctk.CTk):
                                                 fg_color='#5b5c5c',
                                                 hover_color='#424343')
         define_save_path_button.grid(row=5, column=0, padx=10, pady=5)
+
+        self.last_update_label = ctk.CTkLabel(self.current_frame,
+                                              text=None,
+                                              fg_color='transparent')
+        self.last_update_label.grid(row=9, column=0, padx=5, pady=5, sticky="nsew")
 
 
     def open_select_file(self, frame: ctk.CTkFrame, func):
@@ -405,7 +490,7 @@ class App(ctk.CTk):
             print(f"Files selected: {self.file_paths}")
             self.input_file_check = True
 
-            if self.input_file_check and self.save_path_check and self.cleaner_file:
+            if self.input_file_check and self.save_path_check and self.auth_code:
                 switch_frame = ctk.CTkFrame(frame, fg_color="transparent")
                 switch_frame.grid(row=7, column=0, padx=5, sticky="nsew")
                 switch_frame.grid_rowconfigure(0, weight=1)
@@ -426,7 +511,7 @@ class App(ctk.CTk):
 
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
-                                                command=lambda: self.trigger_tool(func, self.cleaner_file, self.file_paths, self.save_path, selected_mode.get()),
+                                                command=lambda: self.trigger_tool(func, self.auth_code, self.file_paths, self.save_path, selected_mode.get()),
                                                 height=36,
                                                 width=240,
                                                 fg_color='#d99125',
@@ -454,7 +539,7 @@ class App(ctk.CTk):
             print(f"Directory selected: {self.save_path}")
             self.save_path_check = True
 
-            if self.input_file_check and self.save_path_check and self.cleaner_file:
+            if self.input_file_check and self.save_path_check and self.auth_code:
                 switch_frame = ctk.CTkFrame(frame, fg_color="transparent")
                 switch_frame.grid(row=7, column=0, padx=5, sticky="nsew")
                 switch_frame.grid_rowconfigure(0, weight=1)
@@ -475,7 +560,7 @@ class App(ctk.CTk):
 
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
-                                                command=lambda: self.trigger_tool(func, self.cleaner_file, self.file_paths, self.save_path, selected_mode.get()),
+                                                command=lambda: self.trigger_tool(func, self.auth_code, self.file_paths, self.save_path, selected_mode.get()),
                                                 height=36,
                                                 width=240,
                                                 fg_color='#d99125',

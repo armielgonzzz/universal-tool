@@ -1,7 +1,30 @@
 import re
 import os
+import dropbox
 import pandas as pd
 from datetime import datetime, timedelta
+
+def download_list_cleaner(auth_code: str) -> None:
+    global dnc_df, mvp_df, db_id_df, time_df, conv_df
+
+    print("Downloading list cleaner files")
+
+    sheet_names = [
+        "CCM+CH+MVPC+MVPT+JC+RC+PD",
+        "DNC",
+        "UniqueDB ID",
+        "CallOut-14d+TextOut-30d",
+        "PDConvDup"
+    ]
+
+    for sheet_name in sheet_names:
+        dropbox_path = f"/List Cleaner & JC DNC/{sheet_name}.csv"
+        local_file_path = f"./data/{sheet_name}.csv"
+        dbx = dropbox.Dropbox(auth_code)
+        metadata, response = dbx.files_download(dropbox_path)
+
+        with open(local_file_path, 'wb') as f:
+            f.write(response.content)
 
 def is_valid_phone(phone):
     return bool(re.fullmatch(r'\d{10,15}', phone))
@@ -140,31 +163,19 @@ def apply_all_filters(df: pd.DataFrame, run_mode: str) -> pd.DataFrame:
 
     return df_longest_reason
 
-def get_phone_set(cleaner_file: str) -> set:
+def get_phone_set() -> set:
 
-    list_cleaner_df = pd.read_excel(cleaner_file,
-                                    sheet_name=['CCM+CH+MVPC+MVPT+JC+RC+PD',
-                                                'DNC',
-                                                'CallOut-14d+TextOut-30d',
-                                                'PDConvDup',
-                                                'FromOtherList'],
-                                    header=None)
-    
-    final_list_cleaner_df = pd.concat([list_cleaner_df['CCM+CH+MVPC+MVPT+JC+RC+PD'],
-                                        list_cleaner_df['DNC'],
-                                        list_cleaner_df['CallOut-14d+TextOut-30d'],
-                                        list_cleaner_df['PDConvDup'],
-                                        list_cleaner_df['FromOtherList']])
+    data_path = './data'
+    file_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'CallOut-14d+TextOut-30d.csv', 'PDConvDup.csv']
+    final_list_cleaner_df = pd.concat([pd.read_csv(os.path.join(data_path, file), low_memory=False, header=None) for file in file_list], ignore_index=True)
 
     # Clean up the list and filter for valid phone numbers
     valid_phone_set = set(int(phone) for phone in map(str, final_list_cleaner_df[0].tolist()) if is_valid_phone(phone))
     return valid_phone_set
 
-def get_id_set(cleaner_file: str) -> set:
+def get_id_set() -> set:
 
-    unique_db_df_list = pd.read_excel(cleaner_file,
-                                      sheet_name=['UniqueDB ID'])
-    unique_db_df = unique_db_df_list['UniqueDB ID']
+    unique_db_df = pd.read_csv('./data/UniqueDB ID.csv', low_memory=False)
     valid_numbers = pd.to_numeric(unique_db_df['Deal - Unique Database ID'], errors='coerce')
     valid_numbers = valid_numbers.dropna().astype(int)
     valid_id_set = set(valid_numbers)
@@ -210,14 +221,13 @@ def export_output(df: pd.DataFrame, file_path: str, save_path: str) -> None:
         print("No output generated. Invalid file format")
 
 
-def main(cleaner_file: str, files: tuple, save_path: str, run_mode: str):
+def main(auth_code: str, files: tuple, save_path: str, run_mode: str):
 
     try:
+        download_list_cleaner(auth_code)
 
-        print("Preparing List Cleaner File")
-
-        valid_phone_set = get_phone_set(cleaner_file)
-        valid_id_set = get_id_set(cleaner_file)
+        valid_phone_set = get_phone_set()
+        valid_id_set = get_id_set()
 
         for file in files:
 
