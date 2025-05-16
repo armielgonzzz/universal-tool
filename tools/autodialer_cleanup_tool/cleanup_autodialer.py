@@ -128,6 +128,25 @@ def export_output(df: pd.DataFrame, file_path: str, save_path: str) -> None:
     else:
         print("No output generated. Invalid file format")
 
+def export_reclean_output(df: pd.DataFrame, file_path: str, save_path: str) -> None:
+
+    # Capitalization of all names
+    columns_to_transform = ['Owner', 'First Name']
+    df[columns_to_transform] = df[columns_to_transform].applymap(lambda x: x.title() if isinstance(x, str) else x)
+
+    filename = os.path.basename(file_path)
+    if filename.endswith('.csv'):
+        df.to_csv(f"{save_path}/(Re-clean file) {filename}", index=False)
+    
+    elif filename.endswith('.xlsx'):
+        df.to_excel(f"{save_path}/(Re-clean file) {filename}", index=False)
+
+    elif filename.endswith('.xlsb'):
+        df.to_excel(f"{save_path}/(Re-clean file) {filename.split('.')[0]}.xlsx", index=False)
+    
+    else:
+        print("No output generated. Invalid file format")
+
 def read_file(path: str):
 
     if path.endswith('.csv'):
@@ -189,15 +208,21 @@ def clean_contact_id_deal_id(df: pd.DataFrame, id_set: set) -> pd.DataFrame:
 
     return final_df
 
-def get_phone_set() -> set:
+def get_phone_set() -> tuple[set, set]:
 
     data_path = './data'
+
+    # Initial cleaning phone set
     file_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'CallOut-14d+TextOut-30d.csv', 'PDConvDup.csv']
     final_list_cleaner_df = pd.concat([pd.read_csv(os.path.join(data_path, file), low_memory=False, header=None) for file in file_list], ignore_index=True)
-
-    # Clean up the list and filter for valid phone numbers
     valid_phone_set = set(int(phone) for phone in map(str, final_list_cleaner_df[0].tolist()) if is_valid_phone(phone))
-    return valid_phone_set
+
+    # Recleaning phone set
+    recleaning_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'PDConvDup.csv']
+    final_list_recleaner_df = pd.concat([pd.read_csv(os.path.join(data_path, file), low_memory=False, header=None) for file in recleaning_list], ignore_index=True)
+    valid_phone_reclean_set = set(int(phone) for phone in map(str, final_list_recleaner_df[0].tolist()) if is_valid_phone(phone))
+    
+    return valid_phone_set, valid_phone_reclean_set
 
 def get_id_set() -> set:
 
@@ -294,7 +319,7 @@ def main(auth_code: str, list_files: tuple, save_path: str, run_mode: str):
     try:
         download_list_cleaner(auth_code)
 
-        valid_phone_set = get_phone_set()
+        valid_phone_set, valid_reclean_phone_set = get_phone_set()
         valid_id_set = get_id_set()
         disposition_set, months_set = read_cm_live_db()
         
@@ -302,6 +327,13 @@ def main(auth_code: str, list_files: tuple, save_path: str, run_mode: str):
 
             print(f"Processing file {os.path.basename(list_file)}")
             list_df = read_file(list_file)
+
+            # Run recleaning
+            if run_mode == 'recleaning':
+                list_df['Phone Number'] = list_df['Phone Number'].apply(pd.to_numeric, errors='coerce').astype('Int64')
+                recleaning_df = list_df[~list_df['Phone Number'].isin(valid_reclean_phone_set)]
+                export_reclean_output(recleaning_df, list_file, save_path)
+                continue
 
             # Convert phone numbers to int
             phone_columns = ['phone1', 'phone2', 'phone3', 'phone4', 'phone5']

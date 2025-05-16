@@ -163,10 +163,13 @@ def apply_all_filters(df: pd.DataFrame, run_mode: str) -> pd.DataFrame:
 
     return df_longest_reason
 
-def get_phone_set() -> set:
+def get_phone_set(run_mode: str) -> set:
 
     data_path = './data'
     file_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'CallOut-14d+TextOut-30d.csv', 'PDConvDup.csv']
+    if run_mode == 'recleaning':
+        file_list.remove('CallOut-14d+TextOut-30d.csv')
+        
     final_list_cleaner_df = pd.concat([pd.read_csv(os.path.join(data_path, file), low_memory=False, header=None) for file in file_list], ignore_index=True)
 
     # Clean up the list and filter for valid phone numbers
@@ -226,7 +229,7 @@ def main(auth_code: str, files: tuple, save_path: str, run_mode: str):
     try:
         download_list_cleaner(auth_code)
 
-        valid_phone_set = get_phone_set()
+        valid_phone_set = get_phone_set(run_mode)
         valid_id_set = get_id_set()
 
         for file in files:

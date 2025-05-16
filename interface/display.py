@@ -487,14 +487,13 @@ class App(ctk.CTk):
                                                 wraplength=400)
                 selected_files_label.grid(row=index, column=0, padx=10, pady=3, sticky='nsew')
 
-            print(f"Files selected: {self.file_paths}")
             self.input_file_check = True
 
             if self.input_file_check and self.save_path_check and self.auth_code:
                 switch_frame = ctk.CTkFrame(frame, fg_color="transparent")
                 switch_frame.grid(row=7, column=0, padx=5, sticky="nsew")
                 switch_frame.grid_rowconfigure(0, weight=1)
-                switch_frame.grid_columnconfigure((0,1,2), weight=1)
+                switch_frame.grid_columnconfigure((0,1,2,3), weight=1)
                 selected_mode = ctk.StringVar(value="call_marketing")
 
                 mode_label = ctk.CTkLabel(switch_frame,
@@ -506,8 +505,11 @@ class App(ctk.CTk):
                 radio_off.grid(row=0, column=1, padx=5, sticky="nsew")
 
                 # Right radio button
-                radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing", variable=selected_mode, value="text_marketing")
+                radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing - Raw Cleaning", variable=selected_mode, value="text_marketing")
                 radio_on.grid(row=0, column=2, padx=5, sticky="nsew")
+
+                recleaning_button = ctk.CTkRadioButton(switch_frame, text="Text Marketing - Re-cleaning", variable=selected_mode, value="recleaning")
+                recleaning_button.grid(row=0, column=3, padx=5, sticky="nsew")
 
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
@@ -536,14 +538,13 @@ class App(ctk.CTk):
             save_path_label.grid(row=6, column=0, padx=30, pady=5, sticky='nsew', ipadx=8, ipady=8)
 
             save_path_label.configure(text=f"{self.save_path}")
-            print(f"Directory selected: {self.save_path}")
             self.save_path_check = True
 
             if self.input_file_check and self.save_path_check and self.auth_code:
                 switch_frame = ctk.CTkFrame(frame, fg_color="transparent")
                 switch_frame.grid(row=7, column=0, padx=5, sticky="nsew")
                 switch_frame.grid_rowconfigure(0, weight=1)
-                switch_frame.grid_columnconfigure((0,1,2), weight=1)
+                switch_frame.grid_columnconfigure((0,1,2,3), weight=1)
                 selected_mode = ctk.StringVar(value="call_marketing")
 
                 mode_label = ctk.CTkLabel(switch_frame,
@@ -555,8 +556,11 @@ class App(ctk.CTk):
                 radio_off.grid(row=0, column=1, padx=5, sticky="nsew")
 
                 # Right radio button
-                radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing", variable=selected_mode, value="text_marketing")
+                radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing - Raw Cleaning", variable=selected_mode, value="text_marketing")
                 radio_on.grid(row=0, column=2, padx=5, sticky="nsew")
+
+                recleaning_button = ctk.CTkRadioButton(switch_frame, text="Text Marketing - Re-cleaning", variable=selected_mode, value="recleaning")
+                recleaning_button.grid(row=0, column=3, padx=5, sticky="nsew")
 
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
@@ -586,7 +590,7 @@ class App(ctk.CTk):
                 switch_frame = ctk.CTkFrame(frame, fg_color="transparent")
                 switch_frame.grid(row=7, column=0, padx=5, sticky="nsew")
                 switch_frame.grid_rowconfigure(0, weight=1)
-                switch_frame.grid_columnconfigure((0,1,2), weight=1)
+                switch_frame.grid_columnconfigure((0,1,2,3), weight=1)
                 selected_mode = ctk.StringVar(value="call_marketing")
 
                 mode_label = ctk.CTkLabel(switch_frame,
@@ -598,8 +602,11 @@ class App(ctk.CTk):
                 radio_off.grid(row=0, column=1, padx=5, sticky="nsew")
 
                 # Right radio button
-                radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing", variable=selected_mode, value="text_marketing")
+                radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing - Raw Cleaning", variable=selected_mode, value="text_marketing")
                 radio_on.grid(row=0, column=2, padx=5, sticky="nsew")
+
+                recleaning_button = ctk.CTkRadioButton(switch_frame, text="Text Marketing - Re-cleaning", variable=selected_mode, value="recleaning")
+                recleaning_button.grid(row=0, column=3, padx=5, sticky="nsew")
 
                 run_tool_button = ctk.CTkButton(frame,
                                                 text='RUN TOOL',
