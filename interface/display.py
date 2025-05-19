@@ -385,14 +385,50 @@ class App(ctk.CTk):
         tool_run_button.grid(row=1, column=0, padx=10, pady=(5, 15))
 
 
-    def authenticate_dropbox(self, tool_window):
-        def submit_action(window, tool_window):
+    def authenticate_dropbox(self, tool_window, func):
+        def submit_action(window, tool_window, func):
             user_input = input_field.get()
             if user_input:
                 self.user_input = user_input
                 self.get_latest_update(self.user_input)
                 window.destroy()
                 self.authentication_result_window()
+                if self.input_file_check and self.save_path_check and self.auth_code:
+                    switch_frame = ctk.CTkFrame(tool_window, fg_color="transparent")
+                    switch_frame.grid(row=7, column=0, padx=5, sticky="nsew")
+                    switch_frame.grid_rowconfigure(0, weight=1)
+                    switch_frame.grid_columnconfigure((0,1,2,3), weight=1)
+                    selected_mode = ctk.StringVar(value="call_marketing")
+
+                    mode_label = ctk.CTkLabel(switch_frame,
+                                            text="Select run mode: ")
+                    mode_label.grid(row=0, column=0, padx=5, sticky="nsew")
+
+                    # Left radio button
+                    radio_off = ctk.CTkRadioButton(switch_frame, text="Call Marketing", variable=selected_mode, value="call_marketing")
+                    radio_off.grid(row=0, column=1, padx=5, sticky="nsew")
+
+                    # Right radio button
+                    radio_on = ctk.CTkRadioButton(switch_frame, text="Text Marketing - Raw Cleaning", variable=selected_mode, value="text_marketing")
+                    radio_on.grid(row=0, column=2, padx=5, sticky="nsew")
+
+                    recleaning_button = ctk.CTkRadioButton(switch_frame, text="Text Marketing - Re-cleaning", variable=selected_mode, value="recleaning")
+                    recleaning_button.grid(row=0, column=3, padx=5, sticky="nsew")
+
+                    run_tool_button = ctk.CTkButton(tool_window,
+                                                    text='RUN TOOL',
+                                                    command=lambda: self.trigger_tool(func, self.auth_code, self.file_paths, self.save_path, selected_mode.get()),
+                                                    height=36,
+                                                    width=240,
+                                                    fg_color='#d99125',
+                                                    hover_color='#ae741e',
+                                                    text_color='#141414',
+                                                    corner_radius=50,
+                                                    font=ctk.CTkFont(
+                                                        size=18,
+                                                        weight='bold'
+                                                    ))
+                    run_tool_button.grid(row=8, column=0, padx=10, pady=5)
 
         # Create the authentication frame (a new top-level window)
         authentication_frame = ctk.CTkToplevel(self)
@@ -421,7 +457,7 @@ class App(ctk.CTk):
                                       text_color='#141414',
                                       corner_radius=50,
                                       font=ctk.CTkFont(size=18, weight='bold'),
-                                      command=lambda: submit_action(authentication_frame, tool_window))
+                                      command=lambda: submit_action(authentication_frame, tool_window, func))
         submit_button.grid(row=2, column=0, padx=10, pady=20, sticky='nsew')
 
     def display_phone_clean_tool(self):
@@ -447,7 +483,7 @@ class App(ctk.CTk):
                                               text="Authenticate Dropbox",
                                               fg_color='#5b5c5c',
                                               hover_color='#424343',
-                                              command=lambda:self.authenticate_dropbox(self))
+                                              command=lambda:self.authenticate_dropbox(self.current_frame, run_clean_up))
         update_cleaner_button.grid(row=1, column=0, padx=5, pady=5, sticky="ns")
         
         select_file_button = ctk.CTkButton(self.current_frame,
