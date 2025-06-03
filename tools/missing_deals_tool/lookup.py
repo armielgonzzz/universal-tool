@@ -15,7 +15,7 @@ def format_phone(lookup_df: pd.DataFrame) -> pd.DataFrame:
     if 'From' in filtered_df.columns:
         phone_column = 'From'
         filtered_df['phone'] = filtered_df[phone_column]
-        filtered_df['phone'] = filtered_df['phone'].astype(str).apply(lambda x: x[1:])
+        filtered_df['phone'] = filtered_df['phone'].astype(str).apply(lambda x: x[1:] if len(x) == 11 else x)
         filtered_df['phone'] = pd.to_numeric(filtered_df['phone'], errors='coerce').astype('Int64').astype(str)
     else:
         phone_column = 'ANI'
