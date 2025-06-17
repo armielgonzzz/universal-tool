@@ -65,7 +65,8 @@ def download_list_cleaner(auth_code: str) -> None:
         "DNC",
         "UniqueDB ID",
         "CallOut-14d+TextOut-30d",
-        "PDConvDup"
+        "PDConvDup",
+        "PDJRAADups"
     ]
 
     for sheet_name in sheet_names:
@@ -213,12 +214,12 @@ def get_phone_set() -> tuple[set, set]:
     data_path = './data'
 
     # Initial cleaning phone set
-    file_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'CallOut-14d+TextOut-30d.csv', 'PDConvDup.csv']
+    file_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'CallOut-14d+TextOut-30d.csv', 'PDConvDup.csv', 'PDJRAADups.csv']
     final_list_cleaner_df = pd.concat([pd.read_csv(os.path.join(data_path, file), low_memory=False, header=None) for file in file_list], ignore_index=True)
     valid_phone_set = set(int(phone) for phone in map(str, final_list_cleaner_df[0].tolist()) if is_valid_phone(phone))
 
     # Recleaning phone set
-    recleaning_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'PDConvDup.csv']
+    recleaning_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'PDConvDup.csv', 'PDJRAADups.csv']
     final_list_recleaner_df = pd.concat([pd.read_csv(os.path.join(data_path, file), low_memory=False, header=None) for file in recleaning_list], ignore_index=True)
     valid_phone_reclean_set = set(int(phone) for phone in map(str, final_list_recleaner_df[0].tolist()) if is_valid_phone(phone))
     

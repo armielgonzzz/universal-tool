@@ -29,7 +29,7 @@ APP_SECRET = os.getenv('DROPBOX_APP_SECRET')
 
 def save_all_files():
     print("Saving all CSV files")
-    global mvp_df, dnc_df, conv_df, db_id_df
+    global mvp_df, dnc_df, conv_df, db_id_df, pd_jr_aa_df
     final_df = pd.DataFrame(sum(outbound_df_list, []))
     final_df.drop_duplicates(inplace=True)
     
@@ -41,6 +41,7 @@ def save_all_files():
     dnc_df.drop_duplicates().dropna().to_csv('./data/DNC.csv', index=False, header=None)
     conv_df.drop_duplicates().dropna().to_csv('./data/PDConvDup.csv', index=False, header=None)
     db_id_df.drop_duplicates().dropna().to_csv('./data/UniqueDB ID.csv', index=False, header=None)
+    pd_jr_aa_df.drop_duplicates().dropna().to_csv('./data/PDJRAADups.csv', index=False, header=None)
 
 def get_update_df(update_df: pd.DataFrame, sheet_name: str):
     pass
@@ -68,7 +69,8 @@ def export_to_dropbox(root_path: str, local_data_path: str, dbx: dropbox.Dropbox
         "DNC",
         "UniqueDB ID",
         "CallOut-14d+TextOut-30d",
-        "PDConvDup"
+        "PDConvDup",
+        "PDJRAADups"
     ]
 
     for sheet_name in sheet_names:
@@ -168,6 +170,41 @@ def add_unique_db(path: str, dbx):
     # with pd.ExcelWriter(excel_file, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         
     #     deal_df.to_excel(writer, sheet_name='UniqueDB ID', index=False)
+
+def add_pd_jr_aa_dup(path: str, dbx):
+    print("Processing Pipedrive JR AA Duplicate")
+    global pd_jr_aa_df
+    df = read_dropbox_file(path, dbx)
+    phone_columns = [f'Person - Phone {i}' for i in range(2, 11)]
+    phone_columns.extend(['Person - Phone - Work', 'Person - Phone - Home', 'Person - Phone - Mobile', 'Person - Phone - Other', 'Person - Archive - Phone'])
+    phones_df = df[phone_columns]
+
+    all_phone_numbers = []
+
+    # Iterate over each column and each row to extract phone numbers
+    for column in phone_columns:
+        phones_df[column] = phones_df[column].fillna('')  # Replace NaN with an empty string
+        for phone_entry in phones_df[column]:
+            # Convert each entry to a string, handle floats (remove .0), and split comma-separated values
+            phone_entry = str(phone_entry).replace('.0', '')  # Remove `.0` from floats
+            valid_phone_pattern = re.compile(r'^\+?\d{10}$')  # A simple pattern for phone numbers (you can adjust it)
+            all_phone_numbers.extend([phone.strip() for phone in phone_entry.split(',') if phone.strip() and valid_phone_pattern.match(phone.strip())])
+            # all_phone_numbers.extend([phone.strip() for phone in phone_entry.split(',') if phone.strip()])
+
+    # Create a DataFrame from the extracted phone numbers
+    result_df = pd.DataFrame({'Phone Number': all_phone_numbers})
+
+    result_df['Phone Number'] = result_df['Phone Number'] \
+        .str.replace("(", "") \
+        .str.replace(")", "") \
+        .str.replace("-", "") \
+        .str.replace(" ", "")
+    
+    result_df.drop_duplicates(subset=['Phone Number'], inplace=True)
+
+    result_df.columns = [0]
+    pd_jr_aa_df = result_df
+    result_df = None
 
 def add_pd_conv_dup(path: str, dbx):
     print("Processing Pipedrive Conversion Duplicate")
@@ -630,7 +667,7 @@ def concat_c3(path: str, dbx):
         return combined_df
 
 def create_local_list_cleaner(local_data_path: str, root_path: str, dbx: dropbox.Dropbox) -> None:
-    global dnc_df, mvp_df, db_id_df, time_df, conv_df
+    global dnc_df, mvp_df, db_id_df, time_df, conv_df, pd_jr_aa_df
 
     print("Creating new local list cleaner file")
 
@@ -639,7 +676,8 @@ def create_local_list_cleaner(local_data_path: str, root_path: str, dbx: dropbox
         "DNC",
         "UniqueDB ID",
         "CallOut-14d+TextOut-30d",
-        "PDConvDup"
+        "PDConvDup",
+        "PDJRAADups"
     ]
 
     for sheet_name in sheet_names:
@@ -663,6 +701,8 @@ def create_local_list_cleaner(local_data_path: str, root_path: str, dbx: dropbox
                 time_df = df
             case "PDConvDup":
                 conv_df = df
+            case "PDJRAADups":
+                pd_jr_aa_df = df
             case _:
                 print(f"Unknown sheet: {sheet_name}")
 
@@ -708,7 +748,8 @@ def main(auth_code: str, app_window: ctk.CTkFrame):
             "pd_phone": add_pd_phones,
             "pd_remove": add_remove_list,
             "pd_convdups": add_pd_conv_dup,
-            "sly": add_sly
+            "sly": add_sly,
+            "pd_jr_aa": add_pd_jr_aa_dup
         }
 
         # Download and replace local list cleaner file

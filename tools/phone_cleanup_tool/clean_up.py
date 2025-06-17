@@ -14,7 +14,8 @@ def download_list_cleaner(auth_code: str) -> None:
         "DNC",
         "UniqueDB ID",
         "CallOut-14d+TextOut-30d",
-        "PDConvDup"
+        "PDConvDup",
+        "PDJRAADups"
     ]
 
     for sheet_name in sheet_names:
@@ -166,7 +167,7 @@ def apply_all_filters(df: pd.DataFrame, run_mode: str) -> pd.DataFrame:
 def get_phone_set(run_mode: str) -> set:
 
     data_path = './data'
-    file_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'CallOut-14d+TextOut-30d.csv', 'PDConvDup.csv']
+    file_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'CallOut-14d+TextOut-30d.csv', 'PDConvDup.csv', 'PDJRAADups.csv']
     if run_mode == 'recleaning':
         file_list.remove('CallOut-14d+TextOut-30d.csv')
         
