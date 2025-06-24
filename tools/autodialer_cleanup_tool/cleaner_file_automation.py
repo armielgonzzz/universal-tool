@@ -32,16 +32,20 @@ def save_all_files():
     global mvp_df, dnc_df, conv_df, db_id_df, pd_jr_aa_df
     final_df = pd.DataFrame(sum(outbound_df_list, []))
     final_df.drop_duplicates(inplace=True)
+
+    final_seven_df = pd.DataFrame(sum(outbound_seven_days_list, []))
+    final_seven_df.drop_duplicates(inplace=True)
     
     # with pd.ExcelWriter(excel_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
     #     final_df.to_excel(writer, sheet_name='CallOut-14d+TextOut-30d', index=False, header=False)
 
-    final_df.to_csv('./data/CallOut-14d+TextOut-30d.csv', index=False, header=None)
-    mvp_df.drop_duplicates().dropna().to_csv('./data/CCM+CH+MVPC+MVPT+JC+RC+PD.csv', index=False, header=None)
-    dnc_df.drop_duplicates().dropna().to_csv('./data/DNC.csv', index=False, header=None)
-    conv_df.drop_duplicates().dropna().to_csv('./data/PDConvDup.csv', index=False, header=None)
-    db_id_df.drop_duplicates().dropna().to_csv('./data/UniqueDB ID.csv', index=False, header=None)
-    pd_jr_aa_df.drop_duplicates().dropna().to_csv('./data/PDJRAADups.csv', index=False, header=None)
+    final_df.to_csv('./data/CallOut-14d+TextOut-30d (Cold).csv', index=False, header=None)
+    final_seven_df.to_csv('./data/CallTextOut-7d (PD).csv', index=False, header=None)
+    mvp_df.drop_duplicates().dropna().to_csv('./data/CCM+CH+MVPC+MVPT+JC+RC+PD (Cold).csv', index=False, header=None)
+    dnc_df.drop_duplicates().dropna().to_csv('./data/DNC (Cold-PD).csv', index=False, header=None)
+    conv_df.drop_duplicates().dropna().to_csv('./data/PDConvDup (PD).csv', index=False, header=None)
+    db_id_df.drop_duplicates().dropna().to_csv('./data/UniqueDB ID (Cold).csv', index=False, header=None)
+    pd_jr_aa_df.drop_duplicates().dropna().to_csv('./data/PDJRAADups (PD).csv', index=False, header=None)
 
 def get_update_df(update_df: pd.DataFrame, sheet_name: str):
     pass
@@ -306,6 +310,7 @@ def add_jc(path: str, dbx):
                        usecols=['Client Number', 'Delivery Status', 'Datetime'],
                        parse_dates=['Datetime'])
     thirty_days_ago = pd.to_datetime('today', utc=True, format='mixed', dayfirst=False) - timedelta(days=30)
+    seven_days_ago = pd.to_datetime('today', utc=True, format='mixed', dayfirst=False) - timedelta(days=7)
     df['Datetime'] = pd.to_datetime(df['Datetime'], format='mixed', dayfirst=False, utc=True)
     df['Client Number'] = df['Client Number'].astype('Int64')
     result_df = df[df['Client Number'].notna()].copy()  # Ensure we work on a copy of the filtered DataFrame
@@ -313,9 +318,11 @@ def add_jc(path: str, dbx):
 
     received_df = result_df[result_df['Delivery Status'].str.lower() == 'received'][['Client Number']]
     sent_df = result_df[(result_df['Delivery Status'].str.lower().isin(['sent', 'delivered'])) & (result_df['Datetime'] >= thirty_days_ago)][['Client Number']]
+    sent_seven_df = result_df[(result_df['Delivery Status'].str.lower().isin(['sent', 'delivered'])) & (result_df['Datetime'] >= seven_days_ago)][['Client Number']]
 
     received_df.drop_duplicates(subset=['Client Number'], inplace=True)
     sent_df.drop_duplicates(subset=['Client Number'], inplace=True)
+    sent_seven_df.drop_duplicates(subset=['Client Number'], inplace=True)
 
     # get_update_df(received_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
     received_df.columns = [0]
@@ -333,6 +340,9 @@ def add_jc(path: str, dbx):
     #     sent_df.to_excel(writer, sheet_name='JCSMS-Sent', index=False, header=False)
     outbound_df_list.append(sent_df.values.tolist())
     sent_df = None
+
+    outbound_seven_days_list.append(sent_seven_df.values.tolist())
+    sent_seven_df = None
 
 def add_sly(path: str, dbx):
     print("Processing Sly")
@@ -354,13 +364,16 @@ def add_contact_center(df: pd.DataFrame, dbx):
     print("Processing Contact Center")
     global mvp_df
     fourteen_days_ago = pd.to_datetime('today', format='mixed', dayfirst=False) - timedelta(days=14)
+    seven_days_ago = pd.to_datetime('today', format='mixed', dayfirst=False) - timedelta(days=7)
     df['Date'] = pd.to_datetime(df['Date'], format='mixed', dayfirst=False)
     df = df[df['Media Type Name'] != 'E-Mail']
     inbound_df = df[df['Skill Direction'] == 'Inbound'][['ANI/From']]
     outbound_df = df[(df['Skill Direction'] == 'Outbound') & (df['Date'] >= fourteen_days_ago)][['DNIS/To']]
+    outbound_seven_df = df[(df['Skill Direction'] == 'Outbound') & (df['Date'] >= seven_days_ago)][['DNIS/To']]
 
     inbound_df.drop_duplicates(inplace=True)
     outbound_df.drop_duplicates(inplace=True)
+    outbound_seven_df.drop_duplicates(inplace=True)
 
     # get_update_df(inbound_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
     inbound_df.columns = [0]
@@ -377,15 +390,21 @@ def add_contact_center(df: pd.DataFrame, dbx):
     outbound_df_list.append(outbound_df.values.tolist())
     outbound_df = None
 
+    outbound_seven_days_list.append(outbound_seven_df.values.tolist())
+    outbound_seven_df = None
+
 def add_contact_history_inbound(df: pd.DataFrame, dbx):
     print("Processing Contact History")
     fourteen_days_ago = pd.to_datetime('today', format='mixed', dayfirst=False) - timedelta(days=14)
+    seven_days_ago = pd.to_datetime('today', format='mixed', dayfirst=False) - timedelta(days=7)
     df['Start Time:'] = pd.to_datetime(df['Start Time:'], format='mixed', dayfirst=False)
     inbound_df = df[(df['Media Type'] != 'Email') & (df['Outbound'] == 0)][['ANI/From']]
     outbound_df = df[(df['Media Type'] != 'Email') & (df['Outbound'] == 1) & (df['Start Time:'] >= fourteen_days_ago)][['ANI/From']]
+    outbound_seven_df = df[(df['Media Type'] != 'Email') & (df['Outbound'] == 1) & (df['Start Time:'] >= seven_days_ago)][['ANI/From']]
 
     inbound_df.drop_duplicates(inplace=True)
     outbound_df.drop_duplicates(inplace=True)
+    outbound_seven_df.drop_duplicates(inplace=True)
 
     # get_update_df(inbound_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
     global mvp_df
@@ -395,6 +414,9 @@ def add_contact_history_inbound(df: pd.DataFrame, dbx):
     # get_update_df(outbound_df, 'CallOut-14d+TextOut-30d')
     outbound_df_list.append(outbound_df.values.tolist())
     outbound_df = None
+
+    outbound_seven_days_list.append(outbound_seven_df.values.tolist())
+    outbound_seven_df = None
 
 def add_mvp_calls_inbound(df: pd.DataFrame, dbx):
     print("Processing MVP Calls")
@@ -420,6 +442,7 @@ def add_mvp(df: pd.DataFrame, dbx):
     print("Processing MVP Texts")
     # Calculate the date threshold
     thirty_days_ago = pd.Timestamp.utcnow() - timedelta(days=30)
+    seven_days_ago = pd.Timestamp.utcnow() - timedelta(days=7)
 
     # Convert 'Date / Time' to datetime efficiently
     df['Date / Time'] = pd.to_datetime(df['Date / Time'], utc=True, errors='coerce')
@@ -444,6 +467,13 @@ def add_mvp(df: pd.DataFrame, dbx):
         ['Sender Number']
     ].drop_duplicates()
 
+    outbound_seven_df = df.loc[
+        (df['Direction'] == 'Outbound') & 
+        (df['Date / Time'] >= seven_days_ago) & 
+        (df['Sender Number'].str.len() == 10),
+        ['Sender Number']
+    ].drop_duplicates()
+
     # get_update_df(inbound_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
     global mvp_df
     inbound_df.columns = [0]
@@ -455,12 +485,17 @@ def add_mvp(df: pd.DataFrame, dbx):
     outbound_df_list.append(outbound_df.values.tolist())
     outbound_df = None
 
+    outbound_seven_days_list.append(outbound_seven_df.values.tolist())
+    outbound_seven_df = None
+
 def add_rc(df: pd.DataFrame, dbx):
     print("Processing RC")
     thirty_days_ago = pd.to_datetime('today', utc=True, format='mixed', dayfirst=False) - timedelta(days=30)
+    seven_days_ago = pd.to_datetime('today', utc=True, format='mixed', dayfirst=False) - timedelta(days=7)
     df['Creation Time (UTC)'] = pd.to_datetime(df['Creation Time (UTC)'], utc=True, format='mixed', dayfirst=False)
     received_df = df[df['Direction'] == 'Inbound'][['From']]
     sent_df = df[(df['Direction'] == 'Outbound') & (df['Creation Time (UTC)'] >= thirty_days_ago)][['To']]
+    sent_seven_df = df[(df['Direction'] == 'Outbound') & (df['Creation Time (UTC)'] >= seven_days_ago)][['To']]
     received_df['From'] = received_df['From'].apply(
         lambda x: ''.join(filter(str.isdigit, str(x))) if pd.notna(x) else x
     ).str[1:]
@@ -469,9 +504,14 @@ def add_rc(df: pd.DataFrame, dbx):
         lambda x: ''.join(filter(str.isdigit, str(x))) if pd.notna(x) else x
     ).str[1:]
 
+    sent_seven_df['To'] = sent_seven_df['To'].apply(
+        lambda x: ''.join(filter(str.isdigit, str(x))) if pd.notna(x) else x
+    ).str[1:]
+
 
     received_df.drop_duplicates(subset=['From'], inplace=True)
     sent_df.drop_duplicates(subset=['To'], inplace=True)
+    sent_seven_df.drop_duplicates(subset=['To'], inplace=True)
 
     # get_update_df(received_df, 'CCM+CH+MVPC+MVPT+JC+RC+PD')
     global mvp_df
@@ -488,6 +528,9 @@ def add_rc(df: pd.DataFrame, dbx):
 
     outbound_df_list.append(sent_df.values.tolist())
     sent_df = None
+
+    outbound_seven_days_list.append(sent_seven_df.values.tolist())
+    sent_seven_df = None
 
 def add_c3(df: pd.DataFrame, dbx):
     print("Processing C3")
@@ -672,12 +715,12 @@ def create_local_list_cleaner(local_data_path: str, root_path: str, dbx: dropbox
     print("Creating new local list cleaner file")
 
     sheet_names = [
-        "CCM+CH+MVPC+MVPT+JC+RC+PD",
-        "DNC",
-        "UniqueDB ID",
-        "CallOut-14d+TextOut-30d",
-        "PDConvDup",
-        "PDJRAADups"
+        "CCM+CH+MVPC+MVPT+JC+RC+PD (Cold)",
+        "DNC (Cold-PD)",
+        "UniqueDB ID (Cold)",
+        "CallOut-14d+TextOut-30d (Cold)",
+        "PDConvDup (PD)",
+        "PDJRAADups (PD)"
     ]
 
     for sheet_name in sheet_names:
@@ -691,17 +734,17 @@ def create_local_list_cleaner(local_data_path: str, root_path: str, dbx: dropbox
         df = pd.read_csv(local_file_path, low_memory=False, header=None)
 
         match sheet_name:
-            case "CCM+CH+MVPC+MVPT+JC+RC+PD":
+            case "CCM+CH+MVPC+MVPT+JC+RC+PD (Cold)":
                 mvp_df = df
-            case "DNC":
+            case "DNC (Cold-PD)":
                 dnc_df = df
-            case "UniqueDB ID":
+            case "UniqueDB ID (Cold)":
                 db_id_df = df
-            case "CallOut-14d+TextOut-30d":
+            case "CallOut-14d+TextOut-30d (Cold)":
                 time_df = df
-            case "PDConvDup":
+            case "PDConvDup (PD)":
                 conv_df = df
-            case "PDJRAADups":
+            case "PDJRAADups (PD)":
                 pd_jr_aa_df = df
             case _:
                 print(f"Unknown sheet: {sheet_name}")
@@ -737,8 +780,9 @@ def main(auth_code: str, app_window: ctk.CTkFrame):
         dbx = dropbox.Dropbox(auth_code)
 
         root_path = check_user_folder_paths(dbx)
-        global outbound_df_list
+        global outbound_df_list, outbound_seven_days_list
         outbound_df_list = []
+        outbound_seven_days_list = []
         
         # Create constant variables
         local_data_path = './data'

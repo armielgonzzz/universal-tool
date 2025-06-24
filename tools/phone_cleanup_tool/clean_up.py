@@ -10,12 +10,13 @@ def download_list_cleaner(auth_code: str) -> None:
     print("Downloading list cleaner files")
 
     sheet_names = [
-        "CCM+CH+MVPC+MVPT+JC+RC+PD",
-        "DNC",
-        "UniqueDB ID",
-        "CallOut-14d+TextOut-30d",
-        "PDConvDup",
-        "PDJRAADups"
+        "CCM+CH+MVPC+MVPT+JC+RC+PD (Cold)",
+        "DNC (Cold-PD)",
+        "UniqueDB ID (Cold)",
+        "CallOut-14d+TextOut-30d (Cold)",
+        "CallTextOut-7d (PD)",
+        "PDConvDup (PD)",
+        "PDJRAADups (PD)"
     ]
 
     for sheet_name in sheet_names:
@@ -167,7 +168,14 @@ def apply_all_filters(df: pd.DataFrame, run_mode: str) -> pd.DataFrame:
 def get_phone_set(run_mode: str) -> set:
 
     data_path = './data'
-    file_list = ['CCM+CH+MVPC+MVPT+JC+RC+PD.csv', 'DNC.csv', 'CallOut-14d+TextOut-30d.csv', 'PDConvDup.csv', 'PDJRAADups.csv']
+    file_list = [
+        "CCM+CH+MVPC+MVPT+JC+RC+PD (Cold).csv",
+        "DNC (Cold-PD).csv",
+        "CallOut-14d+TextOut-30d (Cold).csv",
+        "CallTextOut-7d (PD).csv",
+        "PDConvDup (PD).csv",
+        "PDJRAADups (PD).csv"
+    ]
     if run_mode == 'recleaning':
         file_list.remove('CallOut-14d+TextOut-30d.csv')
         
@@ -179,7 +187,7 @@ def get_phone_set(run_mode: str) -> set:
 
 def get_id_set() -> set:
 
-    unique_db_df = pd.read_csv('./data/UniqueDB ID.csv', low_memory=False)
+    unique_db_df = pd.read_csv('./data/UniqueDB ID (Cold).csv', low_memory=False)
     valid_numbers = pd.to_numeric(unique_db_df['Deal - Unique Database ID'], errors='coerce')
     valid_numbers = valid_numbers.dropna().astype(int)
     valid_id_set = set(valid_numbers)

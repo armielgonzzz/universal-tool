@@ -355,7 +355,7 @@ class App(ctk.CTk):
         if oauth_result.access_token:
             self.auth_code = oauth_result.access_token
             dbx = dropbox.Dropbox(oauth_result.access_token)
-            metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/DNC.csv')
+            metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/DNC (Cold-PD).csv')
             last_modified_date = metadata.client_modified
             utc_time = last_modified_date.replace(tzinfo=ZoneInfo("UTC"))
             cst_time = utc_time.astimezone(ZoneInfo("America/Chicago"))
@@ -961,7 +961,7 @@ class AutoDialerCleaner(ctk.CTkFrame):
         if oauth_result.access_token:
             self.auth_code = oauth_result.access_token
             dbx = dropbox.Dropbox(oauth_result.access_token)
-            metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/DNC.csv')
+            metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/DNC (Cold-PD).csv')
             last_modified_date = metadata.client_modified
             utc_time = last_modified_date.replace(tzinfo=ZoneInfo("UTC"))
             cst_time = utc_time.astimezone(ZoneInfo("America/Chicago"))
