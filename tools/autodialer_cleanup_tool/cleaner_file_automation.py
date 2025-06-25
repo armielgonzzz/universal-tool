@@ -69,12 +69,13 @@ def export_to_dropbox(root_path: str, local_data_path: str, dbx: dropbox.Dropbox
 
     print("Uploading to List Cleaner Files to Dropbox")
     sheet_names = [
-        "CCM+CH+MVPC+MVPT+JC+RC+PD",
-        "DNC",
-        "UniqueDB ID",
-        "CallOut-14d+TextOut-30d",
-        "PDConvDup",
-        "PDJRAADups"
+        "CCM+CH+MVPC+MVPT+JC+RC+PD (Cold)",
+        "DNC (Cold-PD)",
+        "UniqueDB ID (Cold)",
+        "CallOut-14d+TextOut-30d (Cold)",
+        "CallTextOut-7d (PD)",
+        "PDConvDup (PD)",
+        "PDJRAADups (PD)"
     ]
 
     for sheet_name in sheet_names:
@@ -757,7 +758,7 @@ def check_user_folder_paths(dbx: dropbox.Dropbox):
                 return entry.path_display
             
 def update_latest_cleaner_file_label(app_window: ctk.CTkFrame, dbx: dropbox.Dropbox):
-    metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/DNC.csv')
+    metadata = dbx.files_get_metadata('/List Cleaner & JC DNC/DNC (Cold-PD).csv')
     last_modified_date = metadata.client_modified
     app_window.last_update_label.configure(text=f'List cleaner file last update: {last_modified_date}')
 
