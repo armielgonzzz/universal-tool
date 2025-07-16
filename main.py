@@ -11,10 +11,15 @@ load_dotenv(dotenv_path='misc/.env')
 # Replace these with your repository details
 GITHUB_USER = os.getenv("USER")
 GITHUB_REPO = os.getenv("REPO")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_API_URL = f'https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/releases/latest'
+HEADERS = {
+    'Authorization': f'token {GITHUB_TOKEN}',
+    'Accept': 'application/vnd.github.v3+json'
+}
 
 def get_latest_release():
-    response = requests.get(GITHUB_API_URL)
+    response = requests.get(GITHUB_API_URL, headers=HEADERS if GITHUB_TOKEN else None)
     if response.status_code == 200:
         release_data = response.json()
         version = release_data['tag_name']
